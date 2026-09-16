@@ -1,0 +1,39 @@
+# Versions are pinned deliberately, and the ceiling is the SDK manager.
+#
+# Portage's dev-util/android-sdk-cmdline-tools (build 11076708) speaks SDK XML
+# version 3, while platform 37 is published as version 4, so android-37 cannot be
+# installed without keywording a much newer cmdline-tools. compileSdk therefore
+# stays at 36 (Android 16), which pins AGP to 8.13.x and the androidx libraries to
+# the last releases that still compile against 36 -- the newer ones demand API 37
+# and AGP 9.1+. Nothing here needs an API 37 symbol.
+#
+# Gradle comes from Portage (dev-java/gradle-bin 8.14.2) via the wrapper, and AGP
+# needs a JDK of 17..21 rather than the system's 25 -- see gradle.properties.
+[versions]
+agp = "8.13.2"
+kotlin = "2.2.21"
+composeBom = "2026.06.01"
+activityCompose = "1.12.4"
+lifecycle = "2.10.0"
+coreKtx = "1.17.0"
+coroutines = "1.11.0"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
+kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

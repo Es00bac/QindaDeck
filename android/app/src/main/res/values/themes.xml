@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose supplies the real colour scheme; this only needs to keep the
+         window from flashing white before the first frame. -->
+    <style name="Theme.QindaDeck" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#0E1117</item>
+        <item name="android:statusBarColor">#0E1117</item>
+        <item name="android:navigationBarColor">#0E1117</item>
+    </style>
+</resources>

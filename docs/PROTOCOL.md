@@ -69,7 +69,16 @@ unsolicited device events.
 | `wifi_set` | `ssid`, `pass` | `ok`, then reboots |
 | `wifi_forget` | — | `ok`, reboots into SoftAP |
 | `reboot` | — | `ok`, then reboots |
-| `factory_reset` | — | wipes NVS + profile storage |
+| `factory_reset` | — | rewrites the built-in profiles |
+| `bt_scan` | `seconds?` | `devices`: `[{addr,name,rssi,usage,what,addr_type,appearance}]` |
+| `bt_pair` | `addr`, `addr_type?`, `name?` | starts connecting; outcome arrives as a `bt` event |
+| `bt_forget` | `addr` | drops the bond and stops reconnecting |
+| `bt_list` | — | `devices`: remembered devices with `connected` |
+| `list_remaps` | — | `remaps`: `[{addr,name,bindings,passthrough}]` |
+| `get_remap` | `addr` | `remap`, or null when the device has no bindings yet |
+| `put_remap` | `remap` | validates and stores |
+| `del_remap` | `addr` | removes the bindings |
+| `learn` | `on`, `mute?` | streams `src_input` events; `mute` (default true) suppresses bindings while capturing |
 
 Unsolicited events use `id` 0 and an `ev` key:
 
@@ -78,7 +87,36 @@ Unsolicited events use `id` 0 and an `ev` key:
 {"id":0,"ev":"macro","state":"start","name":"Export PNG"}
 {"id":0,"ev":"macro","state":"done","name":"Export PNG"}
 {"id":0,"ev":"macro","state":"abort","name":"Export PNG","reason":"stopped"}
+{"id":0,"ev":"bt","state":"connected","addr":"e4:17:d8:2a:19:7c","name":"Stratus+"}
+{"id":0,"ev":"bt","state":"disconnected","addr":"e4:17:d8:2a:19:7c"}
+{"id":0,"ev":"bt","state":"battery","addr":"e4:17:d8:2a:19:7c","level":82}
+{"id":0,"ev":"bt","state":"failed","addr":"","reason":"could not connect"}
 ```
+
+A client is also sent an unsolicited `hello` the moment it connects, so the app
+does not have to ask for state it is about to be given.
+
+## Learn mode — `src_input`
+
+While `learn` is on, every input report from a paired device is summarised to the
+client. This is how the app offers a binding predicate without anyone having to
+know their controller's report layout:
+
+```json
+{"id":0,"ev":"src_input","addr":"e4:17:d8:2a:19:7c","report":1,"len":9,"usage":8,
+ "bits":[{"byte":4,"bit":0,"down":true}],
+ "bytes":[{"byte":4,"val":1,"prev":0,"analog":false},
+          {"byte":2,"val":214,"prev":128,"analog":true}],
+ "keys":[],
+ "raw":"01008ed6010000000"}
+```
+
+`bits` lists every bit that changed and whether it went high; `bytes` lists every
+byte that changed, flagged `analog` when it moved by more than 8, which separates
+a stick from a button without guessing. `keys` carries the currently-held keyboard
+usages when the device is a keyboard, with modifiers reported as their canonical
+usages `0xE0`..`0xE7`. `raw` is the whole report, for the awkward device that
+fits none of the above.
 
 ## Binary input events — type 0x02
 
