@@ -213,6 +213,13 @@ def main() -> int:
     p.add_argument("--btn", default="left", choices=list(BUTTONS))
 
     p = sub.add_parser("type", help="type a string"); p.add_argument("text")
+    sub.add_parser("sd-status", help="SD card presence, capacity and owner")
+    sub.add_parser("sd-take", help="take the card from the USB host for file I/O")
+    sub.add_parser("sd-release", help="give the card back to the USB host")
+    p = sub.add_parser("sd-ls", help="list a directory"); p.add_argument("path", nargs="?", default="/")
+    p = sub.add_parser("sd-get", help="download a file"); p.add_argument("remote"); p.add_argument("local")
+    p = sub.add_parser("sd-put", help="upload a file"); p.add_argument("local"); p.add_argument("remote", nargs="?")
+    p = sub.add_parser("sd-rm", help="delete a file"); p.add_argument("remote")
     p = sub.add_parser("key", help="tap a chord"); p.add_argument("chord")
     p = sub.add_parser("media", help="tap a media key"); p.add_argument("name")
     p = sub.add_parser("name", help="set the device label"); p.add_argument("label")
@@ -273,6 +280,49 @@ def main() -> int:
             ok(deck.call("run_macro", macro={"name": "type", "steps": [
                 {"t": "text", "s": args.text}]}))
             print("typing")
+        elif c == "sd-status":
+            print(json.dumps(deck.call("sd_status"), indent=2))
+        elif c == "sd-take":
+            r = ok(deck.call("sd_take"))
+            print("taken" + ("" if r.get("filesystem") else " (no mountable filesystem)"))
+        elif c == "sd-release":
+            ok(deck.call("sd_release"))
+            print("released")
+        elif c == "sd-ls":
+            r = ok(deck.call("sd_list", path=args.path))
+            for e in sorted(r.get("entries", []),
+                            key=lambda x: (not x["dir"], x["name"].lower())):
+                print(f"{'d' if e['dir'] else '-'} {e['size']:>12}  {e['name']}")
+            if r.get("truncated"):
+                print("… truncated at 256 entries")
+        elif c == "sd-get":
+            import base64
+            with open(args.local, "wb") as f:
+                offset = 0
+                while True:
+                    r = ok(deck.call("sd_read", path=args.remote, offset=offset, max=24576))
+                    data = base64.b64decode(r.get("data", ""))
+                    f.write(data)
+                    offset += len(data)
+                    if r.get("eof", True):
+                        break
+            print(f"{offset} bytes -> {args.local}")
+        elif c == "sd-put":
+            import base64, os
+            remote = args.remote or ("/" + os.path.basename(args.local))
+            with open(args.local, "rb") as f:
+                offset = 0
+                while True:
+                    chunk = f.read(24576)
+                    if not chunk:
+                        break
+                    ok(deck.call("sd_write", path=remote, offset=offset,
+                                 data=base64.b64encode(chunk).decode()))
+                    offset += len(chunk)
+            print(f"{offset} bytes -> {remote}")
+        elif c == "sd-rm":
+            ok(deck.call("sd_delete", path=args.remote))
+            print("deleted")
         elif c == "key":
             ok(deck.call("run_macro", macro={"name": "key", "steps": [
                 {"t": "tap", "keys": args.chord}]}))

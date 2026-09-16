@@ -51,6 +51,16 @@ through the deck as ordinary keystrokes, so it lands wherever the cursor is —
 editor, terminal, chat, login box. An "Enter after phrase" toggle makes it a
 walkie-talkie for shells and chats. Only text leaves the phone, never audio.
 
+## Moving files with the SD card
+
+The app has an SD browser (folder icon, top right). Opening it takes the card
+from the PC — the drive ejects — and lists, downloads, uploads, deletes and
+creates folders over Wi-Fi at a few megabytes a minute. Leaving the screen
+gives the card straight back, and one idle minute does the same thing
+automatically. `tools/deckctl.py` mirrors it for the shell: `sd-ls`, `sd-get`,
+`sd-put`, `sd-rm`. The contract that keeps a bootable card safe is in
+`docs/PROTOCOL.md`.
+
 ## Booting from the deck's SD card
 
 With a card in the slot, the deck enumerates as a USB drive *next to* the

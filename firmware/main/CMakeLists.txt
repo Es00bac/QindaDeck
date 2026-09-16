@@ -3,6 +3,7 @@ idf_component_register(
         "main.c"
         "usb_hid.c"
         "sdcard.c"
+        "sd_ops.c"
         "hid_keymap.c"
         "motion.c"
         "macro.c"
@@ -28,6 +29,7 @@ idf_component_register(
         esp_timer
         sdmmc
         fatfs
+        mbedtls
         esp_hid
         bt
     EMBED_TXTFILES

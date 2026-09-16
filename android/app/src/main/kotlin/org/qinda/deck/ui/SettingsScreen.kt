@@ -63,6 +63,12 @@ fun SettingsScreen(repo: DeckRepository, nav: Navigator) {
             InfoRow("USB to host", if (status.usb) "connected" else "not connected")
             InfoRow("SD card", if (status.sd) "${status.sdMb} MiB, exposed as USB drive"
                                 else "no card detected")
+            if (status.sd) {
+                Spacer(Modifier.height(6.dp))
+                OutlinedButton(onClick = { nav.push(Screen.Sd) }, Modifier.fillMaxWidth()) {
+                    Text("Browse card over Wi-Fi (ejects it from the PC)")
+                }
+            }
             InfoRow("Free memory", "${status.heap / 1024} KiB")
             InfoRow("Uptime", formatUptime(status.uptime))
             InfoRow("Profiles", "${status.profiles}")

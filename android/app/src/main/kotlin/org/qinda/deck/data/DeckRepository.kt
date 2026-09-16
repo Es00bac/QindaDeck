@@ -288,6 +288,96 @@ class DeckRepository(
         _status.value = _status.value.copy(learn = on)
     }
 
+    // ------------------------------------------------------------ sd card files
+
+    data class SdEntry(
+        val name: String,
+        val dir: Boolean,
+        val size: Long,
+        val mtime: Long,
+    )
+
+    data class SdStatus(
+        val present: Boolean,
+        val capacityMb: Long,
+        val owner: String,   // "usb" | "app" | "none"
+    )
+
+    data class SdChunk(
+        val size: Long,
+        val offset: Long,
+        val data: ByteArray,
+        val eof: Boolean,
+    )
+
+    suspend fun sdStatus(): SdStatus {
+        val r = client.call("sd_status")
+        return SdStatus(
+            present = r.optBoolean("present", false),
+            capacityMb = r.optLong("capacity_mb", 0),
+            owner = r.optString("owner", "none"),
+        )
+    }
+
+    /** Take the card from the USB host. Returns true when a filesystem mounted. */
+    suspend fun sdTake(): Boolean {
+        return client.call("sd_take").optBoolean("filesystem", false)
+    }
+
+    suspend fun sdRelease() {
+        client.call("sd_release")
+    }
+
+    /** Fire-and-forget release that outlives the calling screen's composition. */
+    fun sdReleaseAsync() {
+        scope.launch { runCatching { sdRelease() } }
+    }
+
+    suspend fun sdList(path: String): Pair<List<SdEntry>, Boolean> {
+        val r = client.call("sd_list") { put("path", path) }
+        val arr = r.optJSONArray("entries")
+        val entries = buildList {
+            for (i in 0 until (arr?.length() ?: 0)) {
+                val o = arr!!.getJSONObject(i)
+                add(SdEntry(
+                    name = o.optString("name"),
+                    dir = o.optBoolean("dir", false),
+                    size = o.optLong("size", 0),
+                    mtime = o.optLong("mtime", 0),
+                ))
+            }
+        }
+        return entries to r.optBoolean("truncated", false)
+    }
+
+    suspend fun sdRead(path: String, offset: Long, max: Int = 24 * 1024): SdChunk {
+        val r = client.call("sd_read") {
+            put("path", path); put("offset", offset); put("max", max)
+        }
+        return SdChunk(
+            size = r.optLong("size", 0),
+            offset = r.optLong("offset", 0),
+            data = android.util.Base64.decode(r.optString("data", ""), android.util.Base64.DEFAULT),
+            eof = r.optBoolean("eof", true),
+        )
+    }
+
+    suspend fun sdWrite(path: String, offset: Long, data: ByteArray) {
+        client.call("sd_write") {
+            put("path", path)
+            put("offset", offset)
+            put("data", android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP))
+        }
+    }
+
+    suspend fun sdDelete(path: String) {
+        client.call("sd_delete") { put("path", path) }
+    }
+
+    suspend fun sdMkdir(path: String) {
+        client.call("sd_mkdir") { put("path", path) }
+    }
+
     // ------------------------------------------------------------ maintenance
 
     suspend fun setName(name: String) {

@@ -53,7 +53,7 @@ unsolicited device events.
 
 | op | payload | reply |
 | --- | --- | --- |
-| `hello` | — | device identity + state; `sd` reports a card live as the USB LUN, `sd_mb` its capacity |
+| `hello` | — | device identity + state; `sd` reports a card live as the USB LUN, `sd_mb` its capacity, `sd_owner` who holds it |
 | `get_status` | — | `heap`, `uptime`, `usb`, `running` (macro name or null) |
 | `list_profiles` | — | `profiles`: `[{slug,name,icon,accent,pages}]` |
 | `get_profile` | `slug` | `profile`: full object |
@@ -71,6 +71,14 @@ unsolicited device events.
 | `wifi_forget` | — | `ok`, reboots into SoftAP |
 | `reboot` | — | `ok`, then reboots |
 | `factory_reset` | — | rewrites the built-in profiles |
+| `sd_status` | — | `present`, `capacity_mb`, `owner` (`usb`/`app`/`none`) |
+| `sd_take` | — | takes the card for firmware file I/O; the USB host sees its drive eject. `filesystem` says whether a readable FAT/exFAT mounted |
+| `sd_release` | — | hands the card back to the USB host. Also happens automatically after one idle minute |
+| `sd_list` | `path` | `entries`: `[{name,dir,size,mtime}]`, capped at 256 with `truncated` |
+| `sd_read` | `path`, `offset?`, `max?` | `size`, `offset`, base64 `data` (≤ 24 KiB), `eof` |
+| `sd_write` | `path`, `offset`, base64 `data` (≤ 24 KiB) | `written`. Offset 0 creates/truncates; otherwise resumes in place |
+| `sd_delete` | `path` | `ok` — files and empty directories |
+| `sd_mkdir` | `path` | `ok` |
 | `bt_scan` | `seconds?` | `devices`: `[{addr,name,rssi,usage,what,addr_type,appearance}]` |
 | `bt_pair` | `addr`, `addr_type?`, `name?` | starts connecting; outcome arrives as a `bt` event |
 | `bt_forget` | `addr` | drops the bond and stops reconnecting |
@@ -96,6 +104,21 @@ Unsolicited events use `id` 0 and an `ev` key:
 
 A client is also sent an unsolicited `hello` the moment it connects, so the app
 does not have to ask for state it is about to be given.
+
+## SD card file access — the ownership contract
+
+The card can serve exactly one master at a time: the USB host as a block
+device, or the firmware as a FAT filesystem. Concurrent access from both is
+how cards get corrupted, so file operations follow a strict protocol:
+
+1. `sd_take` — the host's drive ejects; `/sdcard` mounts on the firmware.
+2. `sd_list` / `sd_read` / `sd_write` / `sd_delete` / `sd_mkdir` — the work.
+   Paths must be absolute and contain no `..`. Binary payloads travel as
+   base64 in chunks of at most 24 KiB.
+3. `sd_release` — the host gets its drive back.
+
+One idle minute without an sd op releases automatically, so a crashed client
+cannot strand the host's drive. Every file op also resets that clock.
 
 ## Learn mode — `src_input`
 

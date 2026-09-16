@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Mouse
 import androidx.compose.material.icons.filled.Settings
@@ -44,6 +45,7 @@ private fun title(s: Screen): String = when (s) {
     Screen.Profiles -> "Profiles"
     Screen.Displays -> "Displays"
     Screen.Bluetooth -> "Paired devices"
+    Screen.Sd -> "SD card"
     Screen.Settings -> "Settings"
     is Screen.ProfileEditor -> "Edit profile"
     is Screen.ButtonEditor -> "Edit button"
@@ -113,6 +115,13 @@ fun AppRoot(repo: DeckRepository) {
                     }
                 },
                 actions = {
+                    // The card reader is always one tap away, whatever screen
+                    // you are on — passing files should not need a tab of its own.
+                    if (connected && nav.current != Screen.Sd) {
+                        IconButton(onClick = { nav.push(Screen.Sd) }) {
+                            Icon(Icons.Default.Folder, "SD card")
+                        }
+                    }
                     // Dictation keeps running when you wander to another tab;
                     // the dot is the reminder that the mic is hot, and a way back.
                     if (voiceState == VoiceTyper.State.Listening && nav.current != Screen.Voice) {
@@ -160,6 +169,7 @@ fun AppRoot(repo: DeckRepository) {
                 Screen.Deck -> DeckScreen(repo, nav)
                 Screen.Trackpad -> TrackpadScreen(repo)
                 Screen.Voice -> VoiceScreen(repo)
+                Screen.Sd -> SdScreen(repo, nav)
                 Screen.Profiles -> ProfilesScreen(repo, nav)
                 Screen.Displays -> DisplaysScreen(repo)
                 Screen.Bluetooth -> BluetoothScreen(repo, nav)

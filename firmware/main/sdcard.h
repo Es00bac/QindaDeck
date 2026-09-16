@@ -20,6 +20,20 @@ esp_err_t sdcard_init(void);
  * line, so polling is the hot-swap mechanism. */
 void sdcard_start_retry_task(void);
 
+/* Take the card from the USB host for firmware-side file I/O. The host sees
+ * its drive eject; sdcard_release() hands it back. While taken, the FAT
+ * filesystem is mounted at /sdcard. */
+esp_err_t sdcard_take(void);
+esp_err_t sdcard_release(void);
+
+/* True while the firmware, not the USB host, owns the card. */
+bool sdcard_owner_app(void);
+
+/* Reset the idle clock. File ops call this; a minute of silence releases the
+ * card back to USB automatically so a forgotten session cannot strand the
+ * host's drive. */
+void sdcard_note_activity(void);
+
 /* True once a card is live as the USB LUN. */
 bool sdcard_present(void);
 

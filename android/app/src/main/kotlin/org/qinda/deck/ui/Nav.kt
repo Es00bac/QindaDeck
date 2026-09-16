@@ -20,6 +20,7 @@ sealed interface Screen {
     data object Profiles : Screen
     data object Displays : Screen
     data object Bluetooth : Screen
+    data object Sd : Screen
     data object Settings : Screen
 
     data class ProfileEditor(val slug: String) : Screen

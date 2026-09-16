@@ -19,6 +19,7 @@
 #include "profiles.h"
 #include "remap.h"
 #include "sdcard.h"
+#include "sd_ops.h"
 #include "usb_hid.h"
 
 static const char *TAG = "proto";
@@ -64,6 +65,9 @@ static void add_identity(cJSON *o)
     cJSON_AddStringToObject(o, "ip", ip);
     cJSON_AddBoolToObject(o, "usb", usb_hid_mounted());
     cJSON_AddBoolToObject(o, "sd", sdcard_present());
+    cJSON_AddStringToObject(o, "sd_owner",
+                            !sdcard_present() ? "none"
+                            : sdcard_owner_app() ? "app" : "usb");
     cJSON_AddNumberToObject(o, "sd_mb", (double)(sdcard_capacity_bytes() >> 20));
     cJSON_AddBoolToObject(o, "ap", net_link_ap_mode());
     cJSON_AddNumberToObject(o, "heap", (double)esp_get_free_heap_size());
@@ -375,6 +379,8 @@ static void handle_json(const uint8_t *payload, size_t len)
         cJSON_AddBoolToObject(r, "learn", remap_learn_active());
         net_link_send_json(r);
 
+    } else if (sd_ops_handle(op, req)) {
+        /* handled, reply already sent */
     } else {
         fail(req, "unknown op");
     }
