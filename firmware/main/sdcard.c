@@ -54,6 +54,23 @@ esp_err_t sdcard_init(void)
         return ESP_OK;
     }
 
+    /* The MSC class must never see host traffic with an empty LUN table:
+     * esp_tinyusb's _msc_storage_get_by_lun dereferences the driver without a
+     * null check, so zero storages plus a host probe is a LoadProhibited boot
+     * loop. Installing the driver unconditionally makes an empty table answer
+     * "not ready" instead — an ordinary card reader with no card in it. */
+    static bool s_driver_up;
+    if (!s_driver_up) {
+        tinyusb_msc_driver_config_t dcfg = {0};
+        dcfg.callback = msc_event_cb;
+        esp_err_t derr = tinyusb_msc_install_driver(&dcfg);
+        if (derr == ESP_OK || derr == ESP_ERR_INVALID_STATE) {
+            s_driver_up = true;
+        } else {
+            ESP_LOGW(TAG, "MSC driver install: %s", esp_err_to_name(derr));
+        }
+    }
+
 #if DECK_SD_WIDTH != 1 && DECK_SD_WIDTH != 4
 #error "DECK_SD_WIDTH must be 1 or 4"
 #endif
