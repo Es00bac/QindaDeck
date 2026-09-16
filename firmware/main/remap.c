@@ -28,6 +28,12 @@ static const char *TAG = "remap";
 typedef struct {
     char addr[18];
     bool used;
+    /* The parsed remap document, held for the life of the connection.
+     * Re-reading and re-parsing it from SPIFFS per report -- which a gamepad
+     * delivers around 100 times a second -- costs a flash read and a full cJSON
+     * allocation cycle each time, and was enough to drop reports and churn the
+     * heap. It is invalidated on any write, and on disconnect. */
+    cJSON *doc;
     uint8_t prev[REMAP_MAX_REPORT];
     uint16_t prev_len;
     bool have_prev;
@@ -303,6 +309,7 @@ static dev_state_t *state_for(const char *addr)
     }
     for (int i = 0; i < REMAP_MAX_DEVICES; i++) {
         if (!s_dev[i].used) {
+            cJSON_Delete(s_dev[i].doc);
             memset(&s_dev[i], 0, sizeof(s_dev[i]));
             snprintf(s_dev[i].addr, sizeof(s_dev[i].addr), "%s", addr);
             s_dev[i].used = true;
@@ -320,6 +327,8 @@ void remap_reset_device(const char *addr)
     xSemaphoreTake(s_lock, portMAX_DELAY);
     for (int i = 0; i < REMAP_MAX_DEVICES; i++) {
         if (s_dev[i].used && !strcasecmp(s_dev[i].addr, addr)) {
+            cJSON_Delete(s_dev[i].doc);
+            s_dev[i].doc = NULL;
             s_dev[i].used = false;
         }
     }
@@ -599,18 +608,20 @@ void remap_feed(const char *addr, int usage_class, uint16_t report_id,
         len = REMAP_MAX_REPORT;
     }
 
-    cJSON *doc = remap_get(addr);
-    const cJSON *binds = doc ? cJSON_GetObjectItemCaseSensitive(doc, "bindings") : NULL;
-    bool passthrough = doc && cJSON_IsTrue(
-        cJSON_GetObjectItemCaseSensitive(doc, "passthrough"));
-
     xSemaphoreTake(s_lock, portMAX_DELAY);
     dev_state_t *st = state_for(addr);
     if (!st) {
         xSemaphoreGive(s_lock);
-        cJSON_Delete(doc);
         return;
     }
+    if (!st->doc) {
+        /* First report since connecting, or since the bindings changed. */
+        st->doc = remap_get(addr);
+    }
+    const cJSON *doc = st->doc;
+    const cJSON *binds = doc ? cJSON_GetObjectItemCaseSensitive(doc, "bindings") : NULL;
+    bool passthrough = doc && cJSON_IsTrue(
+        cJSON_GetObjectItemCaseSensitive(doc, "passthrough"));
 
     if (s_learn) {
         emit_learn_event(addr, report_id, usage_class, data, len,
@@ -638,7 +649,13 @@ void remap_feed(const char *addr, int usage_class, uint16_t report_id,
         const cJSON *act = cJSON_GetObjectItemCaseSensitive(b, "action");
         /* The physical input has a real press and release, so bindings get a
          * genuine edge pair rather than a synthetic tap: a `hold` binding holds
-         * for exactly as long as the button is down. */
+         * for exactly as long as the button is down.
+         *
+         * This runs on the HID host's event task with s_lock held. A macro action
+         * pre-empts whatever was running and waits for it to unwind, so mashing a
+         * macro-bound button can stall input handling for up to ~200 ms. That
+         * degrades gracefully into dropped reports, which is the right trade for
+         * an input device: stale motion is worse than missing motion. */
         char err[160] = {0};
         if (!action_fire(act, now, !now, NULL, err, sizeof(err))) {
             ESP_LOGW(TAG, "binding %d failed: %s", i, err);
@@ -657,6 +674,4 @@ void remap_feed(const char *addr, int usage_class, uint16_t report_id,
     st->prev_len = len;
     st->have_prev = true;
     xSemaphoreGive(s_lock);
-
-    cJSON_Delete(doc);
 }
