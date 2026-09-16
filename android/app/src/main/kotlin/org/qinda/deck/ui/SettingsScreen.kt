@@ -1,5 +1,10 @@
 package org.qinda.deck.ui
 
+import android.Manifest
+import android.net.wifi.WifiManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -8,8 +13,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.qinda.deck.ble.WifiSync
 import org.qinda.deck.data.DeckRepository
 
 @Composable
@@ -24,6 +32,45 @@ fun SettingsScreen(repo: DeckRepository, nav: Navigator) {
     var scanning by remember { mutableStateOf(false) }
     var ssid by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
+
+    // --- BLE Wi-Fi sync state
+    val context = LocalContext.current
+    var syncSsid by remember { mutableStateOf(readCurrentSsid(context)) }
+    var syncPass by remember { mutableStateOf("") }
+    var pendingSync by remember { mutableStateOf(false) }
+    val syncStage by repo.wifiSync.stage.collectAsState()
+    val syncDetail by repo.wifiSync.detail.collectAsState()
+
+    val blePermissions = remember {
+        if (Build.VERSION.SDK_INT >= 31) {
+            arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
+        } else {
+            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+    }
+    val blePermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { grants ->
+        if (grants.values.all { it }) {
+            pendingSync = true
+        }
+    }
+
+    fun startBleSync() {
+        if (syncSsid.isBlank()) return
+        scope.launch {
+            runCatching { repo.btProv(120) }   // arm the window when the deck is reachable
+            repo.wifiSync.sync(syncSsid.trim(), syncPass, scope)
+        }
+    }
+
+    // Permissions granted after the first tap: go straight into the sync.
+    LaunchedEffect(pendingSync) {
+        if (pendingSync) {
+            pendingSync = false
+            startBleSync()
+        }
+    }
 
     fun run(block: suspend () -> Unit) {
         error = null
@@ -122,6 +169,68 @@ fun SettingsScreen(repo: DeckRepository, nav: Navigator) {
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Change network") }
+
+            Spacer(Modifier.height(14.dp))
+            HorizontalDivider()
+            Spacer(Modifier.height(6.dp))
+            SectionHeader("Sync from this phone")
+            Text(
+                "Hands this phone's network to the deck over a short Bluetooth " +
+                    "link — the way to provision a fresh deck or one on the wrong " +
+                    "network, without joining its setup hotspot. The link drops " +
+                    "the moment it is done, and the radio goes back to hosting " +
+                    "your controller.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(10.dp))
+            OutlinedTextField(
+                value = syncSsid,
+                onValueChange = { syncSsid = it.take(32) },
+                label = { Text("Network name (SSID)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                value = syncPass,
+                onValueChange = { syncPass = it.take(63) },
+                label = { Text("Password") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(10.dp))
+            Button(
+                onClick = {
+                    repo.wifiSync.reset()
+                    blePermissionLauncher.launch(blePermissions)
+                },
+                enabled = syncSsid.isNotBlank() &&
+                    syncStage != WifiSync.Stage.Scanning &&
+                    syncStage != WifiSync.Stage.Connecting &&
+                    syncStage != WifiSync.Stage.Sending,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    when (syncStage) {
+                        WifiSync.Stage.Scanning -> "Scanning…"
+                        WifiSync.Stage.Connecting -> "Connecting…"
+                        WifiSync.Stage.Sending -> "Sending…"
+                        else -> "Sync to deck via Bluetooth"
+                    },
+                )
+            }
+            if (syncDetail.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    syncDetail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (syncStage == WifiSync.Stage.Failed)
+                        MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
 
         Panel("Maintenance") {
@@ -162,7 +271,7 @@ fun SettingsScreen(repo: DeckRepository, nav: Navigator) {
             title = { Text("Restore built-in profiles?") },
             text = {
                 Text(
-                    "The seven profiles that ship with the firmware are rewritten, " +
+                    "The six profiles that ship with the firmware are rewritten, " +
                         "discarding your edits to them. Profiles you created yourself " +
                         "are deleted. Wi-Fi details and paired devices are kept.",
                 )
@@ -254,4 +363,18 @@ private fun formatUptime(seconds: Int): String {
         h > 0 -> "${h}h ${m}m"
         else -> "${m}m ${seconds % 60}s"
     }
+}
+
+
+/** Best-effort current-network SSID for the sync form. Needs location on old
+ * APIs and is simply blank where the platform refuses — the user types it. */
+private fun readCurrentSsid(context: android.content.Context): String = try {
+    val wm = context.applicationContext.getSystemService(android.content.Context.WIFI_SERVICE)
+        as WifiManager
+    wm.connectionInfo?.ssid
+        ?.removePrefix("\"")?.removeSuffix("\"")
+        ?.takeIf { it != "<unknown ssid>" }
+        ?: ""
+} catch (_: Exception) {
+    ""
 }

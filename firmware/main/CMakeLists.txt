@@ -15,6 +15,7 @@ idf_component_register(
         "protocol.c"
         "provision.c"
         "bt_host.c"
+        "bt_prov.c"
         "remap.c"
         "esp_hid_gap.c"
     INCLUDE_DIRS "."

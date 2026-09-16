@@ -61,9 +61,12 @@ written through and the reply decides whether the local copy updates. The firmwa
 validates every profile and macro, so a bad chord surfaces as an error on save
 rather than as a button that silently does nothing later.
 
-**No Bluetooth permission.** Pairing a controller uses the *deck's* radio. The
-phone is a remote control for it, so the app never touches Bluetooth, and a paired
-controller keeps working when the phone is elsewhere.
+**Bluetooth is scoped to one job.** Pairing a controller uses the *deck's*
+radio, not the phone's. The only time the phone touches Bluetooth itself is
+the manual Wi-Fi sync in Settings → Wi-Fi: a short BLE link that writes the
+network credentials to the deck and disconnects. `BLUETOOTH_SCAN`/`CONNECT`
+are requested at that tap (plus location on API ≤ 30, where scans require it).
+Audio never leaves the phone for voice typing either — only recognized text.
 
 ## Not part of this app
 

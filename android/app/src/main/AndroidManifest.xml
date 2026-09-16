@@ -2,13 +2,23 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- The deck is reached over TCP on the local network, and found with mDNS.
-         Notably absent: any Bluetooth permission. Pairing a gamepad uses the
-         ESP32's own radio, so the phone never touches Bluetooth at all.
-
          RECORD_AUDIO is for voice typing only: audio goes to the on-device
          speech recognizer, and only the recognized text leaves the phone, as
-         keystrokes sent to the deck. -->
+         keystrokes sent to the deck.
+
+         Bluetooth is used for exactly one thing: the manual Wi-Fi sync, where
+         the phone hands the deck its network credentials over a short BLE
+         link (Settings → Wi-Fi). Pairing a gamepad still uses the ESP32's own
+         radio. Location is only requested on API ≤ 30, where BLE scanning
+         requires it. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission
+        android:name="android.permission.ACCESS_FINE_LOCATION"
+        android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />

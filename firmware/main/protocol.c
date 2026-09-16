@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "bt_host.h"
+#include "bt_prov.h"
 #include "deck_config.h"
 #include "displays.h"
 #include "esp_log.h"
@@ -379,6 +380,10 @@ static void handle_json(const uint8_t *payload, size_t len)
         cJSON_AddBoolToObject(r, "learn", remap_learn_active());
         net_link_send_json(r);
 
+    } else if (!strcmp(op, "bt_prov")) {
+        const cJSON *sec = cJSON_GetObjectItemCaseSensitive(req, "seconds");
+        bt_prov_start(cJSON_IsNumber(sec) ? sec->valueint : 120);
+        net_link_send_json(reply_for(req, true));
     } else if (sd_ops_handle(op, req)) {
         /* handled, reply already sent */
     } else {

@@ -6,6 +6,7 @@
 
 #include "action.h"
 #include "bt_host.h"
+#include "bt_prov.h"
 #include "deck_config.h"
 #include "displays.h"
 #include "esp_err.h"
@@ -75,6 +76,13 @@ void app_main(void)
     /* Bluetooth last: it is the heaviest subsystem and the least urgent, and
      * bringing it up after Wi-Fi keeps the coexistence arbiter's job simple. */
     bt_host_init();
+    bt_prov_init();
+    /* With no Wi-Fi credentials the deck exists to be provisioned, so the BLE
+     * window stays open until that happens; otherwise it opens on demand via
+     * the bt_prov op. */
+    if (!net_link_has_credentials()) {
+        bt_prov_start(0);
+    }
 
     ESP_LOGI(TAG, "QindaDeck %s ready", DECK_FW_VERSION);
 

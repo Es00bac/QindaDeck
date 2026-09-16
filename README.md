@@ -73,6 +73,17 @@ on boot protocol will ignore (GRUB and Linux handle it fine). See
 `docs/HARDWARE.md` for the slot wiring — it is board-specific and must match
 `deck_config.h` before the card will probe.
 
+## Wi-Fi sync over Bluetooth
+
+Settings → Wi-Fi → "Sync from this phone" hands the phone's current network
+to the deck over a short BLE link — SSID and password are written to a tiny
+GATT service, the deck stores them and reboots onto the network. It is the
+manual way to provision a fresh deck or rescue one on the wrong network,
+without joining the setup hotspot. The window is armed from the app (or stays
+open by itself while the deck has no credentials), and the moment the link
+drops the radio is a BLE HID host for controllers again — nothing about the
+pairing story changes.
+
 ## Pairing a controller to the deck
 
 The deck is also a BLE HID *host*: a gamepad or keyboard bonds to the ESP32

@@ -13,6 +13,7 @@ import org.qinda.deck.net.DeckClient
 import org.qinda.deck.net.DeckException
 import org.qinda.deck.net.Link
 import org.qinda.deck.net.HidUsage
+import org.qinda.deck.ble.WifiSync
 import org.qinda.deck.voice.Ascii
 import org.qinda.deck.voice.VoiceTyper
 
@@ -143,6 +144,9 @@ class DeckRepository(
     fun clearToast() {
         _toast.value = null
     }
+
+    /** BLE Wi-Fi provisioning, driven manually from Settings → Wi-Fi. */
+    val wifiSync = WifiSync(context)
 
     // ------------------------------------------------------------ connection
 
@@ -401,5 +405,15 @@ class DeckRepository(
 
     suspend fun wifiSet(ssid: String, pass: String) {
         client.call("wifi_set") { put("ssid", ssid); put("pass", pass) }
+    }
+
+    /**
+     * Ask the deck to open its BLE provisioning window. Best-effort: a fresh
+     * deck with no credentials keeps the window open on its own, and a deck
+     * on another network is exactly the case this covers, so callers swallow
+     * the failure and just try BLE next.
+     */
+    suspend fun btProv(seconds: Int = 120) {
+        client.call("bt_prov") { put("seconds", seconds) }
     }
 }

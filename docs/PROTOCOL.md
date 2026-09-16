@@ -79,6 +79,7 @@ unsolicited device events.
 | `sd_write` | `path`, `offset`, base64 `data` (≤ 24 KiB) | `written`. Offset 0 creates/truncates; otherwise resumes in place |
 | `sd_delete` | `path` | `ok` — files and empty directories |
 | `sd_mkdir` | `path` | `ok` |
+| `bt_prov` | `seconds?` (default 120, 0 = until reboot) | opens the BLE provisioning window; the deck advertises a small GATT service the app writes Wi-Fi credentials to. Also open by itself while no credentials are stored |
 | `bt_scan` | `seconds?` | `devices`: `[{addr,name,rssi,usage,what,addr_type,appearance}]` |
 | `bt_pair` | `addr`, `addr_type?`, `name?` | starts connecting; outcome arrives as a `bt` event |
 | `bt_forget` | `addr` | drops the bond and stops reconnecting |
@@ -119,6 +120,21 @@ how cards get corrupted, so file operations follow a strict protocol:
 
 One idle minute without an sd op releases automatically, so a crashed client
 cannot strand the host's drive. Every file op also resets that clock.
+
+## BLE provisioning — `bt_prov`
+
+While the window is open, the deck advertises connectable BLE (same
+`QindaDeck <id>` name) carrying service `51DA1000-0DEC-4000-A000-0000000DECA0`:
+
+| characteristic | access | purpose |
+| --- | --- | --- |
+| `51DA1001-…` | write | SSID, ≤ 32 bytes UTF-8 |
+| `51DA1002-…` | write | password, ≤ 64 bytes UTF-8 |
+| `51DA1003-…` | write `0x01` | apply: store both and reboot onto the network |
+| `51DA1004-…` | read, notify | state: 0 idle, 1 ssid staged, 2 ready, 3 applying |
+
+The link is meant to be thrown away: the phone disconnects, the deck reboots,
+and the radio returns to being a BLE HID host for paired controllers.
 
 ## Learn mode — `src_input`
 
