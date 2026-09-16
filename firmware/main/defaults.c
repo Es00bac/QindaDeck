@@ -12,7 +12,6 @@
 EMBED(numpad);
 EMBED(fkeys);
 EMBED(media);
-EMBED(photoshop);
 EMBED(sloom);
 EMBED(qindaqt);
 EMBED(mouse);
@@ -20,12 +19,11 @@ EMBED(mouse);
 /* EMBED_TXTFILES null-terminates each blob, so the start pointer is directly
  * usable as a C string. */
 const char *const deck_default_profiles[] = {
+    qindaqt_start,
     numpad_start,
     fkeys_start,
     media_start,
-    photoshop_start,
     sloom_start,
-    qindaqt_start,
     mouse_start,
 };
 

@@ -2,6 +2,7 @@ idf_component_register(
     SRCS
         "main.c"
         "usb_hid.c"
+        "sdcard.c"
         "hid_keymap.c"
         "motion.c"
         "macro.c"
@@ -25,14 +26,15 @@ idf_component_register(
         json
         esp_http_server
         esp_timer
+        sdmmc
+        fatfs
         esp_hid
         bt
     EMBED_TXTFILES
+        "profiles/qindaqt.json"
         "profiles/numpad.json"
         "profiles/fkeys.json"
         "profiles/media.json"
-        "profiles/photoshop.json"
         "profiles/sloom.json"
-        "profiles/qindaqt.json"
         "profiles/mouse.json"
 )

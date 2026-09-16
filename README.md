@@ -1,19 +1,22 @@
 # QindaDeck
 
-An ESP32-S3 turned into a USB keyboard, mouse and media controller, driven over
-Wi-Fi from an Android companion app. Configurable macro pads, several built-in
-profile pages, and mouse macros that *travel* — interpolated motion over time,
-with press-drag-release, not cursor teleports.
+An ESP32-S3 turned into a USB keyboard, mouse, media controller **and SD card
+reader**, driven over Wi-Fi from an Android companion app. Configurable macro
+pads, several built-in profile pages, voice typing from the phone's mic, and
+mouse macros that *travel* — interpolated motion over time, with
+press-drag-release, not cursor teleports.
 
-The board presents itself to the host PC as an ordinary composite USB HID
-device, so it needs no driver and works at the firmware level: BIOS, login
-screens, and any OS see a plain keyboard and mouse.
+The board presents itself to the host PC as an ordinary composite USB device —
+HID plus mass storage — so it needs no driver and works at the firmware level:
+BIOS, login screens, and any OS see a plain keyboard, mouse, and card reader.
+A micro SD card in the slot shows up as a USB drive, which means the deck can
+carry a live Linux image and boot the very machine it is typing on.
 
 ```
   ┌───────────┐   Wi-Fi / TCP 8437    ┌──────────────┐   USB HID    ┌──────┐
   │  Android  │ ────────────────────► │  ESP32-S3    │ ───────────► │  PC  │
-  │  app      │ ◄──────────────────── │  (USB OTG)   │              │      │
-  └───────────┘   events / status     └──────────────┘              └──────┘
+  │  app      │ ◄──────────────────── │  (USB OTG)   │   USB MSC    │      │
+  └───────────┘   events / status     └──────────────┘ ───────────► └──────┘
 ```
 
 ## Layout
@@ -39,6 +42,26 @@ Macros therefore land on the exact pixel you recorded, and the Android app
 converts your monitor's pixels into that normalized space using the display
 geometry you configure. Change monitors, re-map the display, and the same macro
 still hits the right spot.
+
+## Voice typing
+
+The app's Voice tab turns the phone into a wireless keyboard you talk at.
+Speech is recognized on the phone; each finished phrase is typed on the host
+through the deck as ordinary keystrokes, so it lands wherever the cursor is —
+editor, terminal, chat, login box. An "Enter after phrase" toggle makes it a
+walkie-talkie for shells and chats. Only text leaves the phone, never audio.
+
+## Booting from the deck's SD card
+
+With a card in the slot, the deck enumerates as a USB drive *next to* the
+keyboard and mouse. Write a live image to the card (from any computer, via the
+deck itself or a card reader), reboot the host, pick the drive in the boot
+menu — the deck's keyboard works in that same menu. Two honest caveats: the
+link is full-speed USB, so an image loads in minutes rather than seconds; and
+the keyboard speaks report-ID HID, which some BIOS setup screens that insist
+on boot protocol will ignore (GRUB and Linux handle it fine). See
+`docs/HARDWARE.md` for the slot wiring — it is board-specific and must match
+`deck_config.h` before the card will probe.
 
 ## Pairing a controller to the deck
 
@@ -73,9 +96,11 @@ passphrase `qindadeck`) and serves a setup page at `http://192.168.4.1/`.
 
 ## Status
 
-Verified on the board: seven profiles load, mDNS discovery resolves, macro step
+Verified on the board: six profiles load, mDNS discovery resolves, macro step
 timing lands within a few ms of its declared duration, and the app connects,
-renders the deck, fires keys, edits macros and drives a BLE scan end to end.
+renders the deck, fires keys, edits macros, types spoken phrases and drives a
+BLE scan end to end. The composite HID+MSC descriptor enumerates and the drive
+appears as an empty reader when the slot pins are unwired or no card is in.
 
 Not yet exercised against real hardware: the USB HID output itself (needs the
 native USB port cabled to a host) and a live controller pairing (needs one in
