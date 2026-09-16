@@ -5,12 +5,16 @@ idf_component_register(
         "hid_keymap.c"
         "motion.c"
         "macro.c"
+        "action.c"
         "displays.c"
         "profiles.c"
         "defaults.c"
         "net_link.c"
         "protocol.c"
         "provision.c"
+        "bt_host.c"
+        "remap.c"
+        "esp_hid_gap.c"
     INCLUDE_DIRS "."
     REQUIRES
         esp_wifi
@@ -21,6 +25,8 @@ idf_component_register(
         json
         esp_http_server
         esp_timer
+        esp_hid
+        bt
     EMBED_TXTFILES
         "profiles/numpad.json"
         "profiles/fkeys.json"

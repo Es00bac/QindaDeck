@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "bt_host.h"
 #include "deck_config.h"
 #include "displays.h"
 #include "esp_log.h"
@@ -16,6 +17,7 @@
 #include "macro.h"
 #include "net_link.h"
 #include "profiles.h"
+#include "remap.h"
 #include "usb_hid.h"
 
 static const char *TAG = "proto";
@@ -68,6 +70,11 @@ static void add_identity(cJSON *o)
     cJSON_AddNumberToObject(o, "profiles", profiles_count());
     cJSON_AddNumberToObject(o, "tick", DECK_TICK_MS);
     cJSON_AddNumberToObject(o, "abs_max", DECK_ABS_MAX);
+    /* BLE only on this chip; the app uses this to explain why a Classic-only
+     * controller never shows up in a scan. */
+    cJSON_AddStringToObject(o, "bt", "ble");
+    cJSON_AddItemToObject(o, "bt_devices", bt_host_list());
+    cJSON_AddBoolToObject(o, "learn", remap_learn_active());
     const char *running = macro_running();
     if (running) {
         cJSON_AddStringToObject(o, "running", running);
@@ -277,6 +284,93 @@ static void handle_json(const uint8_t *payload, size_t len)
         profiles_factory_reset();
         net_link_send_json(reply_for(req, true));
         schedule_reboot();
+
+    } else if (!strcmp(op, "bt_scan")) {
+        if (bt_host_scanning()) {
+            fail(req, "a scan is already running");
+        } else {
+            const cJSON *secs = cJSON_GetObjectItemCaseSensitive(req, "seconds");
+            cJSON *r = reply_for(req, true);
+            cJSON_AddItemToObject(r, "devices",
+                                  bt_host_scan(cJSON_IsNumber(secs) ? secs->valueint : 5));
+            net_link_send_json(r);
+        }
+
+    } else if (!strcmp(op, "bt_pair")) {
+        const cJSON *addr = cJSON_GetObjectItemCaseSensitive(req, "addr");
+        const cJSON *at = cJSON_GetObjectItemCaseSensitive(req, "addr_type");
+        const cJSON *nm = cJSON_GetObjectItemCaseSensitive(req, "name");
+        char err[180] = {0};
+        if (!cJSON_IsString(addr) ||
+            !bt_host_pair(addr->valuestring,
+                          cJSON_IsNumber(at) ? at->valueint : -1,
+                          cJSON_IsString(nm) ? nm->valuestring : NULL,
+                          err, sizeof(err))) {
+            fail(req, err[0] ? err : "cannot pair that device");
+        } else {
+            /* Connecting is asynchronous; the outcome arrives as a `bt` event. */
+            cJSON *r = reply_for(req, true);
+            cJSON_AddStringToObject(r, "pending", "connecting");
+            net_link_send_json(r);
+        }
+
+    } else if (!strcmp(op, "bt_forget")) {
+        const cJSON *addr = cJSON_GetObjectItemCaseSensitive(req, "addr");
+        if (!cJSON_IsString(addr) || !bt_host_forget(addr->valuestring)) {
+            fail(req, "not a remembered device");
+        } else {
+            net_link_send_json(reply_for(req, true));
+        }
+
+    } else if (!strcmp(op, "bt_list")) {
+        cJSON *r = reply_for(req, true);
+        cJSON_AddItemToObject(r, "devices", bt_host_list());
+        net_link_send_json(r);
+
+    } else if (!strcmp(op, "list_remaps")) {
+        cJSON *r = reply_for(req, true);
+        cJSON_AddItemToObject(r, "remaps", remap_list());
+        net_link_send_json(r);
+
+    } else if (!strcmp(op, "get_remap")) {
+        const cJSON *addr = cJSON_GetObjectItemCaseSensitive(req, "addr");
+        cJSON *doc = cJSON_IsString(addr) ? remap_get(addr->valuestring) : NULL;
+        cJSON *r = reply_for(req, true);
+        if (doc) {
+            cJSON_AddItemToObject(r, "remap", doc);
+        } else {
+            /* Not an error: a freshly paired device simply has no bindings yet. */
+            cJSON_AddNullToObject(r, "remap");
+        }
+        net_link_send_json(r);
+
+    } else if (!strcmp(op, "put_remap")) {
+        const cJSON *doc = cJSON_GetObjectItemCaseSensitive(req, "remap");
+        char err[220] = {0};
+        if (!doc || !remap_put(doc, err, sizeof(err))) {
+            fail(req, err[0] ? err : "invalid remap");
+        } else {
+            net_link_send_json(reply_for(req, true));
+        }
+
+    } else if (!strcmp(op, "del_remap")) {
+        const cJSON *addr = cJSON_GetObjectItemCaseSensitive(req, "addr");
+        if (!cJSON_IsString(addr) || !remap_del(addr->valuestring)) {
+            fail(req, "no remap for that device");
+        } else {
+            net_link_send_json(reply_for(req, true));
+        }
+
+    } else if (!strcmp(op, "learn")) {
+        const cJSON *on = cJSON_GetObjectItemCaseSensitive(req, "on");
+        const cJSON *mute = cJSON_GetObjectItemCaseSensitive(req, "mute");
+        /* Muting defaults to on: while the editor is capturing a button, firing
+         * that button's existing action would be actively unhelpful. */
+        remap_set_learn(cJSON_IsTrue(on),
+                        cJSON_IsBool(mute) ? cJSON_IsTrue(mute) : true);
+        cJSON *r = reply_for(req, true);
+        cJSON_AddBoolToObject(r, "learn", remap_learn_active());
+        net_link_send_json(r);
 
     } else {
         fail(req, "unknown op");

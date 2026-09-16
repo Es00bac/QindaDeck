@@ -4,6 +4,8 @@
  * Wi-Fi is slow or absent, then storage, then the engine, then the network. */
 #include <string.h>
 
+#include "action.h"
+#include "bt_host.h"
 #include "deck_config.h"
 #include "displays.h"
 #include "esp_err.h"
@@ -16,6 +18,7 @@
 #include "nvs_flash.h"
 #include "profiles.h"
 #include "protocol.h"
+#include "remap.h"
 #include "provision.h"
 #include "usb_hid.h"
 
@@ -56,10 +59,15 @@ void app_main(void)
     mount_storage();
     displays_init();
     macro_engine_init();
+    action_init();
     profiles_init();
+    remap_init();
     protocol_init();
     net_link_init();
     provision_init();
+    /* Bluetooth last: it is the heaviest subsystem and the least urgent, and
+     * bringing it up after Wi-Fi keeps the coexistence arbiter's job simple. */
+    bt_host_init();
 
     ESP_LOGI(TAG, "QindaDeck %s ready", DECK_FW_VERSION);
 

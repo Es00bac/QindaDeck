@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "action.h"
 #include "deck_config.h"
 #include "esp_log.h"
 #include "esp_timer.h"
@@ -25,18 +26,9 @@ extern const int deck_default_profile_count;
 static SemaphoreHandle_t s_lock;
 static char s_active[40];
 static int s_active_page;
-
-/* One auto-repeat slot. A phone can physically hold two pads at once, but
- * repeating both at 16 Hz is not a real workflow, and a single slot keeps the
- * release path unambiguous. */
-static struct {
-    esp_timer_handle_t timer;
-    uint8_t mods;
-    uint8_t usage;
-    uint16_t consumer;
-    bool is_consumer;
-    bool armed;
-} s_repeat;
+/* Counting profiles means walking the SPIFFS directory, which is slow enough to
+ * dominate a status round trip. The count only changes when we change it. */
+static int s_count = -1;
 
 static void path_for(const char *slug, char *out, size_t len)
 {
@@ -98,61 +90,16 @@ static bool write_file(const char *path, const char *text)
 
 static bool validate_button(const cJSON *b, char *err, size_t errlen)
 {
-    const cJSON *kind = cJSON_GetObjectItemCaseSensitive(b, "kind");
-    if (!cJSON_IsString(kind)) {
-        snprintf(err, errlen, "button needs a kind");
-        return false;
-    }
-    const char *k = kind->valuestring;
     const cJSON *idx = cJSON_GetObjectItemCaseSensitive(b, "index");
     if (!cJSON_IsNumber(idx) || idx->valueint < 0 || idx->valueint > 63) {
         snprintf(err, errlen, "button index out of range");
         return false;
     }
-
-    if (!strcmp(k, "tap") || !strcmp(k, "hold")) {
-        const cJSON *keys = cJSON_GetObjectItemCaseSensitive(b, "keys");
-        uint8_t mods = 0, usage = 0;
-        if (!cJSON_IsString(keys) || !hid_keymap_parse(keys->valuestring, &mods, &usage)) {
-            snprintf(err, errlen, "button %d: unknown chord '%s'", idx->valueint,
-                     cJSON_IsString(keys) ? keys->valuestring : "(none)");
-            return false;
-        }
-    } else if (!strcmp(k, "consumer")) {
-        const cJSON *media = cJSON_GetObjectItemCaseSensitive(b, "media");
-        uint16_t usage = 0;
-        if (!cJSON_IsString(media) || !hid_keymap_media(media->valuestring, &usage)) {
-            snprintf(err, errlen, "button %d: unknown media key", idx->valueint);
-            return false;
-        }
-    } else if (!strcmp(k, "text")) {
-        if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(b, "text"))) {
-            snprintf(err, errlen, "button %d: text kind needs text", idx->valueint);
-            return false;
-        }
-    } else if (!strcmp(k, "macro")) {
-        const cJSON *m = cJSON_GetObjectItemCaseSensitive(b, "macro");
-        char merr[160] = {0};
-        deck_macro_t *compiled = macro_compile(m, merr, sizeof(merr));
-        if (!compiled) {
-            snprintf(err, errlen, "button %d: %s", idx->valueint, merr);
-            return false;
-        }
-        macro_free(compiled);
-    } else if (!strcmp(k, "macro_ref") || !strcmp(k, "profile")) {
-        const cJSON *ref = cJSON_GetObjectItemCaseSensitive(
-            b, !strcmp(k, "profile") ? "profile" : "macro_ref");
-        if (!cJSON_IsString(ref)) {
-            snprintf(err, errlen, "button %d: %s needs a reference", idx->valueint, k);
-            return false;
-        }
-    } else if (!strcmp(k, "page")) {
-        if (!cJSON_IsNumber(cJSON_GetObjectItemCaseSensitive(b, "page"))) {
-            snprintf(err, errlen, "button %d: page kind needs a page number", idx->valueint);
-            return false;
-        }
-    } else if (strcmp(k, "noop")) {
-        snprintf(err, errlen, "button %d: unknown kind '%s'", idx->valueint, k);
+    /* A button *is* an action object with presentation fields attached, so the
+     * shared validator is the whole check. */
+    char aerr[180] = {0};
+    if (!action_validate(b, aerr, sizeof(aerr))) {
+        snprintf(err, errlen, "button %d: %s", idx->valueint, aerr);
         return false;
     }
     return true;
@@ -276,32 +223,12 @@ static void install_defaults(bool overwrite)
     }
 }
 
-static void repeat_fire(void *arg)
-{
-    (void)arg;
-    if (!s_repeat.armed) {
-        return;
-    }
-    if (s_repeat.is_consumer) {
-        usb_hid_consumer(s_repeat.consumer, true);
-        usb_hid_consumer(0, false);
-    } else {
-        usb_hid_key_down(s_repeat.mods, s_repeat.usage);
-        usb_hid_key_up(s_repeat.mods, s_repeat.usage);
-    }
-}
-
 void profiles_init(void)
 {
     s_lock = xSemaphoreCreateMutex();
 
-    const esp_timer_create_args_t args = {
-        .callback = repeat_fire,
-        .name = "deck_repeat",
-    };
-    ESP_ERROR_CHECK(esp_timer_create(&args, &s_repeat.timer));
-
     install_defaults(false);
+    s_count = -1;
     load_active();
 
     if (!s_active[0]) {
@@ -369,7 +296,7 @@ cJSON *profiles_list(void)
     return arr;
 }
 
-int profiles_count(void)
+static int count_on_disk(void)
 {
     int n = 0;
     DIR *d = opendir(DECK_FS_BASE);
@@ -384,6 +311,14 @@ int profiles_count(void)
     }
     closedir(d);
     return n;
+}
+
+int profiles_count(void)
+{
+    if (s_count < 0) {
+        s_count = count_on_disk();
+    }
+    return s_count;
 }
 
 cJSON *profiles_get(const char *slug)
@@ -425,6 +360,7 @@ bool profiles_put(const cJSON *profile, char *err, size_t errlen)
         snprintf(err, errlen, "cannot write profile storage");
         return false;
     }
+    s_count = -1;
     ESP_LOGI(TAG, "stored profile '%s'", slug->valuestring);
     return true;
 }
@@ -439,6 +375,7 @@ bool profiles_del(const char *slug)
     if (remove(path) != 0) {
         return false;
     }
+    s_count = -1;
     if (!strcmp(s_active, slug)) {
         s_active[0] = 0;
         s_active_page = 0;
@@ -492,39 +429,13 @@ void profiles_factory_reset(void)
         closedir(d);
     }
     install_defaults(true);
+    s_count = -1;
     s_active[0] = 0;
     s_active_page = 0;
     save_active();
 }
 
 /* ------------------------------------------------------------------ dispatch */
-
-static void repeat_disarm(void)
-{
-    if (s_repeat.armed) {
-        esp_timer_stop(s_repeat.timer);
-        if (s_repeat.is_consumer) {
-            usb_hid_consumer(0, false);
-        } else {
-            usb_hid_key_up(s_repeat.mods, s_repeat.usage);
-        }
-        s_repeat.armed = false;
-    }
-}
-
-static bool run_inline_macro(const cJSON *m, char *err, size_t errlen)
-{
-    deck_macro_t *compiled = macro_compile(m, err, errlen);
-    if (!compiled) {
-        return false;
-    }
-    if (!macro_submit(compiled)) {
-        macro_free(compiled);
-        snprintf(err, errlen, "macro engine unavailable");
-        return false;
-    }
-    return true;
-}
 
 bool profiles_press(const char *slug, int page, int index, const char *state,
                     char *err, size_t errlen)
@@ -545,7 +456,7 @@ bool profiles_press(const char *slug, int page, int index, const char *state,
     /* A release always tears down any hold, even if the profile has since been
      * replaced: otherwise a key could stay down forever. */
     if (!down && up) {
-        repeat_disarm();
+        action_repeat_disarm();
     }
 
     cJSON *p = profiles_get(use_slug);
@@ -561,6 +472,7 @@ bool profiles_press(const char *slug, int page, int index, const char *state,
         snprintf(err, errlen, "profile '%s' has no page %d", use_slug, use_page);
         goto out;
     }
+
     const cJSON *btns = cJSON_GetObjectItemCaseSensitive(pg, "buttons");
     const cJSON *b = NULL;
     int nb = cJSON_IsArray(btns) ? cJSON_GetArraySize(btns) : 0;
@@ -578,141 +490,11 @@ bool profiles_press(const char *slug, int page, int index, const char *state,
         goto out;
     }
 
-    const cJSON *kind = cJSON_GetObjectItemCaseSensitive(b, "kind");
-    const char *k = cJSON_IsString(kind) ? kind->valuestring : "noop";
-
-    if (!strcmp(k, "noop")) {
-        ok = true;
-    } else if (!strcmp(k, "tap")) {
-        uint8_t mods = 0, usage = 0;
-        const cJSON *keys = cJSON_GetObjectItemCaseSensitive(b, "keys");
-        if (!cJSON_IsString(keys) || !hid_keymap_parse(keys->valuestring, &mods, &usage)) {
-            snprintf(err, errlen, "button %d has an unusable chord", index);
-            goto out;
-        }
-        bool rep = cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(b, "repeat_on_hold"));
-        if (down) {
-            usb_hid_key_down(mods, usage);
-            if (rep && !up) {
-                /* Hold to repeat: a beat of grace, then 16 Hz, which is what a
-                 * desktop keyboard does for arrows and volume. */
-                s_repeat.mods = mods;
-                s_repeat.usage = usage;
-                s_repeat.is_consumer = false;
-                s_repeat.armed = true;
-                esp_timer_stop(s_repeat.timer);
-                esp_timer_start_periodic(s_repeat.timer, 62000);
-            }
-        }
-        if (up) {
-            if (rep) {
-                repeat_disarm();
-            }
-            usb_hid_key_up(mods, usage);
-        } else if (!rep && down && (!state || !strcmp(state, "tap"))) {
-            usb_hid_key_up(mods, usage);
-        }
-        ok = true;
-    } else if (!strcmp(k, "hold")) {
-        uint8_t mods = 0, usage = 0;
-        const cJSON *keys = cJSON_GetObjectItemCaseSensitive(b, "keys");
-        if (!cJSON_IsString(keys) || !hid_keymap_parse(keys->valuestring, &mods, &usage)) {
-            snprintf(err, errlen, "button %d has an unusable chord", index);
-            goto out;
-        }
-        if (down) {
-            usb_hid_key_down(mods, usage);
-        }
-        if (up) {
-            usb_hid_key_up(mods, usage);
-        }
-        ok = true;
-    } else if (!strcmp(k, "consumer")) {
-        uint16_t usage = 0;
-        const cJSON *media = cJSON_GetObjectItemCaseSensitive(b, "media");
-        if (!cJSON_IsString(media) || !hid_keymap_media(media->valuestring, &usage)) {
-            snprintf(err, errlen, "button %d has an unknown media key", index);
-            goto out;
-        }
-        bool rep = cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(b, "repeat_on_hold"));
-        if (down) {
-            usb_hid_consumer(usage, true);
-            if (rep && !up) {
-                s_repeat.consumer = usage;
-                s_repeat.is_consumer = true;
-                s_repeat.armed = true;
-                esp_timer_stop(s_repeat.timer);
-                esp_timer_start_periodic(s_repeat.timer, 62000);
-            }
-        }
-        if (up) {
-            if (rep) {
-                repeat_disarm();
-            }
-            usb_hid_consumer(0, false);
-        } else if (!rep && (!state || !strcmp(state, "tap"))) {
-            usb_hid_consumer(0, false);
-        }
-        ok = true;
-    } else if (!strcmp(k, "text")) {
-        if (down) {
-            const cJSON *txt = cJSON_GetObjectItemCaseSensitive(b, "text");
-            cJSON *m = cJSON_CreateObject();
-            cJSON_AddStringToObject(m, "name", "text");
-            cJSON *steps = cJSON_AddArrayToObject(m, "steps");
-            cJSON *st = cJSON_CreateObject();
-            cJSON_AddStringToObject(st, "t", "text");
-            cJSON_AddStringToObject(st, "s", cJSON_IsString(txt) ? txt->valuestring : "");
-            cJSON_AddItemToArray(steps, st);
-            ok = run_inline_macro(m, err, errlen);
-            cJSON_Delete(m);
-        } else {
-            ok = true;
-        }
-    } else if (!strcmp(k, "macro")) {
-        if (down) {
-            ok = run_inline_macro(cJSON_GetObjectItemCaseSensitive(b, "macro"), err, errlen);
-        } else {
-            ok = true;
-        }
-    } else if (!strcmp(k, "macro_ref")) {
-        if (down) {
-            const cJSON *ref = cJSON_GetObjectItemCaseSensitive(b, "macro_ref");
-            const cJSON *macros = cJSON_GetObjectItemCaseSensitive(p, "macros");
-            const cJSON *m = (cJSON_IsString(ref) && cJSON_IsObject(macros))
-                                 ? cJSON_GetObjectItemCaseSensitive(macros, ref->valuestring)
-                                 : NULL;
-            if (!m) {
-                snprintf(err, errlen, "button %d references a missing macro", index);
-                goto out;
-            }
-            ok = run_inline_macro(m, err, errlen);
-        } else {
-            ok = true;
-        }
-    } else if (!strcmp(k, "page")) {
-        if (down) {
-            const cJSON *target = cJSON_GetObjectItemCaseSensitive(b, "page");
-            ok = profiles_set_active(use_slug, cJSON_IsNumber(target) ? target->valueint : 0);
-            if (!ok) {
-                snprintf(err, errlen, "cannot switch page");
-            }
-        } else {
-            ok = true;
-        }
-    } else if (!strcmp(k, "profile")) {
-        if (down) {
-            const cJSON *target = cJSON_GetObjectItemCaseSensitive(b, "profile");
-            ok = cJSON_IsString(target) && profiles_set_active(target->valuestring, 0);
-            if (!ok) {
-                snprintf(err, errlen, "cannot switch to that profile");
-            }
-        } else {
-            ok = true;
-        }
-    } else {
-        snprintf(err, errlen, "button %d has unknown kind '%s'", index, k);
-    }
+    const action_ctx_t ctx = {
+        .profile_slug = use_slug,
+        .macros = cJSON_GetObjectItemCaseSensitive(p, "macros"),
+    };
+    ok = action_fire(b, down, up, &ctx, err, errlen);
 
 out:
     cJSON_Delete(p);

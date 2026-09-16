@@ -394,8 +394,14 @@ static void start_station(const char *ssid, const char *pass)
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wc));
-    /* Power save costs latency on every single keypress. */
-    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
+    /* Wi-Fi and BLE share one radio and one antenna path. With the coexistence
+     * arbiter enabled, WIFI_PS_NONE starves BLE badly enough that the Wi-Fi
+     * association itself fails (repeated reason 2, auth expire), whether or not
+     * any BLE device is connected -- the controller running is enough. Modem
+     * sleep is therefore not tunable here, it is required. It costs little in
+     * practice: an active control connection keeps the radio awake, measured at
+     * ~20 ms median round trip for a button press. */
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_MIN_MODEM));
     ESP_ERROR_CHECK(esp_wifi_start());
     ESP_LOGI(TAG, "joining '%s'", ssid);
 }

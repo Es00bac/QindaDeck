@@ -36,3 +36,18 @@ CONFIG_HTTPD_MAX_REQ_HDR_LEN=1024
 
 # --- Logging ----------------------------------------------------------------
 CONFIG_LOG_DEFAULT_LEVEL_INFO=y
+
+# --- Bluetooth -------------------------------------------------------------
+# BLE only, because the ESP32-S3 has no Bluetooth Classic hardware. The deck is
+# a HID *host* here (it pairs a gamepad or keyboard to itself), which is the
+# opposite direction from the USB side.
+CONFIG_BT_ENABLED=y
+CONFIG_BT_BLUEDROID_ENABLED=y
+CONFIG_BT_BLE_ENABLED=y
+CONFIG_BT_GATTC_ENABLE=y
+CONFIG_BT_BLE_SMP_ENABLE=y
+CONFIG_BT_BLE_42_FEATURES_SUPPORTED=y
+# One registration per HID report characteristic; gamepads can have several.
+CONFIG_BT_GATTC_NOTIF_REG_MAX=16
+# Wi-Fi and BLE share the radio, so the coexistence arbiter is required.
+CONFIG_ESP_COEX_SW_COEXIST_ENABLE=y
