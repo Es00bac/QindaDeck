@@ -37,3 +37,32 @@ object Net {
     /** Absolute pointer range on both axes; see DECK_ABS_MAX. */
     const val ABS_MAX = 32767
 }
+
+/** Keyboard modifier bits for [InputKind.KEY], matching the HID report. */
+object KeyMod {
+    const val LCTRL = 1
+    const val LSHIFT = 2
+    const val LALT = 4
+    const val LMETA = 8
+    const val RCTRL = 16
+    const val RSHIFT = 32
+    const val RALT = 64
+    const val RMETA = 128
+}
+
+/**
+ * HID keyboard usages for the keys voice typing needs as edges rather than
+ * text — Enter, Backspace and friends have no printable ASCII form.
+ */
+object HidUsage {
+    const val ENTER = 0x28
+    const val ESCAPE = 0x29
+    const val BACKSPACE = 0x2A
+    const val TAB = 0x2B
+    const val SPACE = 0x2C
+    const val DELETE = 0x4C
+    const val RIGHT = 0x4F
+    const val LEFT = 0x50
+    const val DOWN = 0x51
+    const val UP = 0x52
+}

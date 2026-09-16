@@ -224,6 +224,12 @@ class DeckClient(private val scope: CoroutineScope) {
         send(byteArrayOf(InputKind.KEY.toByte(), if (down) 1 else 0, mods.toByte(), usage.toByte()))
     }
 
+    /** A full down/up pair for one usage — the binary path's equivalent of a tap. */
+    fun tapKey(usage: Int, mods: Int = 0) {
+        key(true, mods, usage)
+        key(false, mods, usage)
+    }
+
     fun ping() {
         scope.launch { runCatching { sendFrame(Frame.PING, ByteArray(0)) } }
     }

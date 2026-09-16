@@ -1,7 +1,10 @@
 # QindaDeck companion app
 
 Kotlin and Jetpack Compose. Finds the deck over mDNS, then drives it over the
-framed TCP protocol in `docs/PROTOCOL.md`.
+framed TCP protocol in `docs/PROTOCOL.md`. The Voice tab turns the phone into
+a talk-to-type keyboard: speech is recognized on-device, finished phrases are
+typed on the host as keystrokes. `RECORD_AUDIO` is requested at first use and
+is the app's only new permission — audio never leaves the phone, only text.
 
 ## Build
 
@@ -41,6 +44,8 @@ AGP also refuses the system JVM (OpenJDK 25, via `eselect java-vm`), so
 | Path | What |
 | --- | --- |
 | `net/Protocol.kt` | Wire constants, mirrored from the firmware |
+| `voice/VoiceTyper.kt` | SpeechRecognizer wrapper; continuous dictation with per-phrase finals |
+| `voice/Ascii.kt` | Folds transcripts into the ASCII the deck can type |
 | `net/DeckClient.kt` | One socket, one reader; replies matched by id |
 | `net/Discovery.kt` | `NsdManager` mDNS for `_qindadeck._tcp` |
 | `data/Models.kt` | The schema as Kotlin, with explicit JSON both ways |

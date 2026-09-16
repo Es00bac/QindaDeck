@@ -61,11 +61,27 @@ fun SettingsScreen(repo: DeckRepository, nav: Navigator) {
             InfoRow("Address", status.ip)
             InfoRow("MAC", status.mac)
             InfoRow("USB to host", if (status.usb) "connected" else "not connected")
+            InfoRow("SD card", if (status.sd) "${status.sdMb} MiB, exposed as USB drive"
+                                else "no card detected")
             InfoRow("Free memory", "${status.heap / 1024} KiB")
             InfoRow("Uptime", formatUptime(status.uptime))
             InfoRow("Profiles", "${status.profiles}")
             InfoRow("Report rate", "${1000 / status.tick.coerceAtLeast(1)} Hz")
             InfoRow("Bluetooth", "BLE only (no Classic on this chip)")
+        }
+
+        Panel("Paired devices") {
+            Text(
+                "Pair a BLE mouse, gamepad or keyboard straight to the deck — it " +
+                    "keeps working with the phone switched off. Remap its buttons " +
+                    "to any deck action from the same screen.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(10.dp))
+            OutlinedButton(onClick = { nav.push(Screen.Bluetooth) }, Modifier.fillMaxWidth()) {
+                Text("Pairing and remapping")
+            }
         }
 
         Panel("Displays") {

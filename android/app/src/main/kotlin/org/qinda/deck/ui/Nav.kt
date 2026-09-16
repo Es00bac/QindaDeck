@@ -16,6 +16,7 @@ sealed interface Screen {
     data object Connect : Screen
     data object Deck : Screen
     data object Trackpad : Screen
+    data object Voice : Screen
     data object Profiles : Screen
     data object Displays : Screen
     data object Bluetooth : Screen
@@ -31,7 +32,7 @@ sealed interface Screen {
 }
 
 /** Tabs shown in the bottom bar; everything else is pushed on top. */
-val bottomTabs = listOf(Screen.Deck, Screen.Trackpad, Screen.Profiles, Screen.Bluetooth, Screen.Settings)
+val bottomTabs = listOf(Screen.Deck, Screen.Trackpad, Screen.Voice, Screen.Profiles, Screen.Settings)
 
 class Navigator(start: Screen = Screen.Connect) {
     private val stack = mutableStateListOf(start)

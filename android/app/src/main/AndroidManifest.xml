@@ -3,7 +3,12 @@
 
     <!-- The deck is reached over TCP on the local network, and found with mDNS.
          Notably absent: any Bluetooth permission. Pairing a gamepad uses the
-         ESP32's own radio, so the phone never touches Bluetooth at all. -->
+         ESP32's own radio, so the phone never touches Bluetooth at all.
+
+         RECORD_AUDIO is for voice typing only: audio goes to the on-device
+         speech recognizer, and only the recognized text leaves the phone, as
+         keystrokes sent to the deck. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />

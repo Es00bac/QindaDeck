@@ -4,8 +4,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Mouse
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
@@ -18,20 +18,21 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.qinda.deck.data.DeckRepository
 import org.qinda.deck.net.Link
+import org.qinda.deck.voice.VoiceTyper
 
 private fun tabIcon(s: Screen): ImageVector = when (s) {
     Screen.Deck -> Icons.Default.Dashboard
     Screen.Trackpad -> Icons.Default.Mouse
+    Screen.Voice -> Icons.Default.Mic
     Screen.Profiles -> Icons.Default.ViewList
-    Screen.Bluetooth -> Icons.Default.Bluetooth
     else -> Icons.Default.Settings
 }
 
 private fun tabLabel(s: Screen): String = when (s) {
     Screen.Deck -> "Deck"
     Screen.Trackpad -> "Mouse"
+    Screen.Voice -> "Voice"
     Screen.Profiles -> "Profiles"
-    Screen.Bluetooth -> "Pair"
     else -> "Settings"
 }
 
@@ -39,6 +40,7 @@ private fun title(s: Screen): String = when (s) {
     Screen.Connect -> "Connect"
     Screen.Deck -> "Deck"
     Screen.Trackpad -> "Mouse"
+    Screen.Voice -> "Voice"
     Screen.Profiles -> "Profiles"
     Screen.Displays -> "Displays"
     Screen.Bluetooth -> "Paired devices"
@@ -57,6 +59,7 @@ fun AppRoot(repo: DeckRepository) {
     val link by repo.link.collectAsState()
     val status by repo.status.collectAsState()
     val toast by repo.toast.collectAsState()
+    val voiceState by repo.voice.state.collectAsState()
     val scope = rememberCoroutineScope()
 
     val nav = remember { Navigator(if (repo.lastHost.isEmpty()) Screen.Connect else Screen.Connect) }
@@ -110,6 +113,19 @@ fun AppRoot(repo: DeckRepository) {
                     }
                 },
                 actions = {
+                    // Dictation keeps running when you wander to another tab;
+                    // the dot is the reminder that the mic is hot, and a way back.
+                    if (voiceState == VoiceTyper.State.Listening && nav.current != Screen.Voice) {
+                        TextButton(onClick = { nav.selectTab(Screen.Voice) }) {
+                            Icon(
+                                Icons.Default.Mic, "Listening",
+                                Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.tertiary,
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text("Listening", color = MaterialTheme.colorScheme.tertiary)
+                        }
+                    }
                     // A running macro is the one thing you always want to be able
                     // to stop, from wherever you are.
                     if (status.running != null) {
@@ -143,6 +159,7 @@ fun AppRoot(repo: DeckRepository) {
                 Screen.Connect -> ConnectScreen(repo) { nav.selectTab(Screen.Deck) }
                 Screen.Deck -> DeckScreen(repo, nav)
                 Screen.Trackpad -> TrackpadScreen(repo)
+                Screen.Voice -> VoiceScreen(repo)
                 Screen.Profiles -> ProfilesScreen(repo, nav)
                 Screen.Displays -> DisplaysScreen(repo)
                 Screen.Bluetooth -> BluetoothScreen(repo, nav)

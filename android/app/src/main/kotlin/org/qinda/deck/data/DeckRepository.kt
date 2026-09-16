@@ -12,6 +12,9 @@ import org.json.JSONObject
 import org.qinda.deck.net.DeckClient
 import org.qinda.deck.net.DeckException
 import org.qinda.deck.net.Link
+import org.qinda.deck.net.HidUsage
+import org.qinda.deck.voice.Ascii
+import org.qinda.deck.voice.VoiceTyper
 
 /**
  * Single source of truth for the app.
@@ -52,6 +55,29 @@ class DeckRepository(
     private val _toast = MutableStateFlow<String?>(null)
     val toast: StateFlow<String?> = _toast.asStateFlow()
 
+    // ------------------------------------------------------------ voice typing
+
+    /** The speech engine. Lives here so dictation survives tab switches. */
+    val voice = VoiceTyper(context)
+
+    /** Send Enter after each spoken phrase — chat and terminal style. */
+    private val _voiceEnterAfter = MutableStateFlow(prefs.getBoolean("voice_enter", false))
+    val voiceEnterAfter: StateFlow<Boolean> = _voiceEnterAfter.asStateFlow()
+
+    /** Separate spoken phrases with a space when typing them. */
+    private val _voiceSpaceBetween = MutableStateFlow(prefs.getBoolean("voice_space", true))
+    val voiceSpaceBetween: StateFlow<Boolean> = _voiceSpaceBetween.asStateFlow()
+
+    fun setVoiceEnterAfter(on: Boolean) {
+        _voiceEnterAfter.value = on
+        prefs.edit().putBoolean("voice_enter", on).apply()
+    }
+
+    fun setVoiceSpaceBetween(on: Boolean) {
+        _voiceSpaceBetween.value = on
+        prefs.edit().putBoolean("voice_space", on).apply()
+    }
+
     var lastHost: String
         get() = prefs.getString("host", "") ?: ""
         private set(v) = prefs.edit().putString("host", v).apply()
@@ -75,6 +101,20 @@ class DeckRepository(
                     }
                     "bt" -> handleBtEvent(ev)
                 }
+            }
+        }
+
+        // Voice finals become keystrokes as they arrive. Typing is serialized:
+        // one utterance finishes before the next starts, or words would
+        // interleave on the host.
+        scope.launch {
+            voice.finals.collect { segment ->
+                runCatching {
+                    var text = segment
+                    if (_voiceSpaceBetween.value) text += " "
+                    typeText(text)
+                    if (_voiceEnterAfter.value) client.tapKey(HidUsage.ENTER)
+                }.onFailure { say("Voice typing failed: ${it.message}") }
             }
         }
     }
@@ -184,6 +224,21 @@ class DeckRepository(
     suspend fun runMacro(macro: Macro) {
         client.call("run_macro") { put("macro", macro.toJson()) }
     }
+
+    /**
+     * Type arbitrary text on the host as an ad-hoc macro of text steps. The
+     * firmware caps one text step at 512 bytes and types ASCII only, so the
+     * string is folded and chunked here (see voice/Ascii.kt).
+     */
+    suspend fun typeText(raw: String) {
+        val folded = Ascii.fold(raw)
+        if (folded.isBlank()) return
+        val steps = Ascii.chunks(folded).map { Step(kind = StepKind.TEXT, text = it) }
+        runMacro(Macro(name = "voice", steps = steps))
+    }
+
+    /** One key edge from the voice screen's quick keys. */
+    fun tapKey(usage: Int, mods: Int = 0) = client.tapKey(usage, mods)
 
     suspend fun stopMacro() {
         client.call("stop_macro")
