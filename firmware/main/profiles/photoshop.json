@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "slug": "photoshop",
+  "name": "Photoshop",
+  "icon": "brush",
+  "accent": "#31A8FF",
+  "builtin": true,
+  "pages": [
+    {
+      "name": "Tools",
+      "cols": 4,
+      "rows": 6,
+      "buttons": [
+        { "index": 0,  "label": "Move",    "sub": "V", "kind": "tap", "keys": "V" },
+        { "index": 1,  "label": "Marquee", "sub": "M", "kind": "tap", "keys": "M" },
+        { "index": 2,  "label": "Lasso",   "sub": "L", "kind": "tap", "keys": "L" },
+        { "index": 3,  "label": "Select",  "sub": "W", "kind": "tap", "keys": "W" },
+
+        { "index": 4,  "label": "Crop",    "sub": "C", "kind": "tap", "keys": "C" },
+        { "index": 5,  "label": "Picker",  "sub": "I", "kind": "tap", "keys": "I" },
+        { "index": 6,  "label": "Heal",    "sub": "J", "kind": "tap", "keys": "J" },
+        { "index": 7,  "label": "Brush",   "sub": "B", "kind": "tap", "keys": "B", "color": "#1E6FA8" },
+
+        { "index": 8,  "label": "Stamp",   "sub": "S", "kind": "tap", "keys": "S" },
+        { "index": 9,  "label": "Eraser",  "sub": "E", "kind": "tap", "keys": "E" },
+        { "index": 10, "label": "Gradient","sub": "G", "kind": "tap", "keys": "G" },
+        { "index": 11, "label": "Dodge",   "sub": "O", "kind": "tap", "keys": "O" },
+
+        { "index": 12, "label": "Pen",     "sub": "P", "kind": "tap", "keys": "P" },
+        { "index": 13, "label": "Type",    "sub": "T", "kind": "tap", "keys": "T" },
+        { "index": 14, "label": "Path",    "sub": "A", "kind": "tap", "keys": "A" },
+        { "index": 15, "label": "Shape",   "sub": "U", "kind": "tap", "keys": "U" },
+
+        { "index": 16, "label": "Hand",    "sub": "H", "kind": "tap", "keys": "H" },
+        { "index": 17, "label": "Zoom",    "sub": "Z", "kind": "tap", "keys": "Z" },
+        { "index": 18, "label": "Swap",    "sub": "X", "kind": "tap", "keys": "X", "color": "#2A3550" },
+        { "index": 19, "label": "Reset",   "sub": "D", "kind": "tap", "keys": "D", "color": "#2A3550" },
+
+        { "index": 20, "label": "Brush −", "sub": "[", "kind": "tap", "keys": "[",
+          "repeat_on_hold": true, "color": "#2A3550" },
+        { "index": 21, "label": "Brush +", "sub": "]", "kind": "tap", "keys": "]",
+          "repeat_on_hold": true, "color": "#2A3550" },
+        { "index": 22, "label": "Mask",    "sub": "Q", "kind": "tap", "keys": "Q", "color": "#2A3550" },
+        { "index": 23, "label": "Screen",  "sub": "F", "kind": "tap", "keys": "F", "color": "#2A3550" }
+      ]
+    },
+    {
+      "name": "Edit & layers",
+      "cols": 4,
+      "rows": 6,
+      "buttons": [
+        { "index": 0,  "label": "Undo",    "kind": "tap", "keys": "Ctrl+Z",           "repeat_on_hold": true },
+        { "index": 1,  "label": "Step ←",  "kind": "tap", "keys": "Ctrl+Alt+Z",       "repeat_on_hold": true },
+        { "index": 2,  "label": "Step →",  "kind": "tap", "keys": "Ctrl+Shift+Z",     "repeat_on_hold": true },
+        { "index": 3,  "label": "Fade",    "kind": "tap", "keys": "Ctrl+Shift+F" },
+
+        { "index": 4,  "label": "New lyr", "kind": "tap", "keys": "Ctrl+Shift+N", "color": "#1E6FA8" },
+        { "index": 5,  "label": "Dup lyr", "kind": "tap", "keys": "Ctrl+J",       "color": "#1E6FA8" },
+        { "index": 6,  "label": "Group",   "kind": "tap", "keys": "Ctrl+G" },
+        { "index": 7,  "label": "Ungroup", "kind": "tap", "keys": "Ctrl+Shift+G" },
+
+        { "index": 8,  "label": "Merge ↓", "kind": "tap", "keys": "Ctrl+E" },
+        { "index": 9,  "label": "Flatten", "kind": "tap", "keys": "Ctrl+Shift+E" },
+        { "index": 10, "label": "Clip",    "kind": "tap", "keys": "Ctrl+Alt+G" },
+        { "index": 11, "label": "Free ⤢",  "kind": "tap", "keys": "Ctrl+T",       "color": "#1E6FA8" },
+
+        { "index": 12, "label": "All",     "kind": "tap", "keys": "Ctrl+A" },
+        { "index": 13, "label": "Deselect","kind": "tap", "keys": "Ctrl+D" },
+        { "index": 14, "label": "Inverse", "kind": "tap", "keys": "Ctrl+Shift+I" },
+        { "index": 15, "label": "Reselect","kind": "tap", "keys": "Ctrl+Shift+D" },
+
+        { "index": 16, "label": "Levels",  "kind": "tap", "keys": "Ctrl+L" },
+        { "index": 17, "label": "Curves",  "kind": "tap", "keys": "Ctrl+M" },
+        { "index": 18, "label": "Hue/Sat", "kind": "tap", "keys": "Ctrl+U" },
+        { "index": 19, "label": "Desat",   "kind": "tap", "keys": "Ctrl+Shift+U" },
+
+        { "index": 20, "label": "Save",    "kind": "tap", "keys": "Ctrl+S",           "color": "#2F6B4F" },
+        { "index": 21, "label": "Save as", "kind": "tap", "keys": "Ctrl+Shift+S",     "color": "#2F6B4F" },
+        { "index": 22, "label": "Export",  "kind": "tap", "keys": "Ctrl+Shift+Alt+S", "color": "#2F6B4F" },
+        { "index": 23, "label": "Fit",     "kind": "tap", "keys": "Ctrl+0" }
+      ]
+    }
+  ]
+}

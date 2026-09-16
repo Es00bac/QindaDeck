@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "slug": "qindaqt",
+  "name": "QindaQt",
+  "icon": "dashboard",
+  "accent": "#3C6EA5",
+  "builtin": true,
+  "pages": [
+    {
+      "name": "Containers",
+      "cols": 4,
+      "rows": 4,
+      "buttons": [
+        { "index": 0,  "label": "Combine", "sub": "hold + drag", "kind": "hold", "keys": "Meta+Shift",
+          "color": "#1F4E79" },
+        { "index": 1,  "label": "Dock",    "sub": "window", "kind": "tap", "keys": "Meta+Shift+D",
+          "color": "#1F4E79" },
+        { "index": 2,  "label": "Dock pg", "sub": "whole tab", "kind": "tap", "keys": "Meta+Ctrl+Shift+D" },
+        { "index": 3,  "label": "Save",    "sub": "layout", "kind": "tap", "keys": "Meta+Ctrl+W",
+          "color": "#2F6B4F" },
+
+        { "index": 4,  "label": "Move",    "sub": "group", "kind": "tap", "keys": "Meta+Shift+M" },
+        { "index": 5,  "label": "Split",   "sub": "adjust", "kind": "tap", "keys": "Meta+Shift+S" },
+        { "index": 6,  "label": "Resize",  "sub": "group", "kind": "tap", "keys": "Meta+Shift+R" },
+        { "index": 7,  "label": "Strips",  "sub": "titles", "kind": "tap", "keys": "Meta+Shift+C" },
+
+        { "index": 8,  "label": "◀ Page",  "kind": "tap", "keys": "Meta+Ctrl+PageUp",   "repeat_on_hold": true },
+        { "index": 9,  "label": "Page ▶",  "kind": "tap", "keys": "Meta+Ctrl+PageDown", "repeat_on_hold": true },
+        { "index": 10, "label": "◀ Order", "kind": "tap", "keys": "Meta+Ctrl+Shift+PageUp" },
+        { "index": 11, "label": "Order ▶", "kind": "tap", "keys": "Meta+Ctrl+Shift+PageDown" },
+
+        { "index": 12, "label": "Minimise","kind": "tap", "keys": "Meta+Ctrl+Shift+N" },
+        { "index": 13, "label": "Maximise","kind": "tap", "keys": "Meta+Ctrl+Shift+X" },
+        { "index": 14, "label": "Restore", "kind": "tap", "keys": "Meta+Ctrl+Shift+U" },
+        { "index": 15, "label": "Close all","sub": "group", "kind": "tap", "keys": "Meta+Ctrl+Shift+Q",
+          "color": "#5A2F34" }
+      ]
+    },
+    {
+      "name": "Shell",
+      "cols": 4,
+      "rows": 2,
+      "buttons": [
+        { "index": 0, "label": "Notes",  "sub": "shortcut card", "kind": "tap", "keys": "Meta+Shift+F1" },
+        { "index": 1, "label": "Notify", "sub": "centre", "kind": "tap", "keys": "Meta+N", "color": "#1F4E79" },
+        { "index": 2, "label": "Lock",   "sub": "session", "kind": "tap", "keys": "Meta+L", "color": "#5A2F34" },
+        { "index": 3, "label": "Desktop","kind": "tap", "keys": "Meta+D" },
+        { "index": 4, "label": "◀ Desk", "kind": "tap", "keys": "Meta+Ctrl+Left",  "repeat_on_hold": true },
+        { "index": 5, "label": "Desk ▶", "kind": "tap", "keys": "Meta+Ctrl+Right", "repeat_on_hold": true },
+        { "index": 6, "label": "Overview","kind": "tap", "keys": "Meta+W" },
+        { "index": 7, "label": "Launcher","kind": "tap", "keys": "Meta" }
+      ]
+    }
+  ]
+}

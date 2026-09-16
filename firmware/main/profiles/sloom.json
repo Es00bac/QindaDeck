@@ -1,0 +1,113 @@
+{
+  "schema": 1,
+  "slug": "sloom",
+  "name": "Sloom Studio",
+  "icon": "palette",
+  "accent": "#F2A33C",
+  "builtin": true,
+  "pages": [
+    {
+      "name": "Workspaces",
+      "cols": 4,
+      "rows": 4,
+      "buttons": [
+        { "index": 0,  "label": "Flow",    "sub": "⌃1", "kind": "tap", "keys": "Ctrl+1", "color": "#8A5A1E" },
+        { "index": 1,  "label": "Editor",  "sub": "⌃2", "kind": "tap", "keys": "Ctrl+2", "color": "#8A5A1E" },
+        { "index": 2,  "label": "Image",   "sub": "⌃3", "kind": "tap", "keys": "Ctrl+3", "color": "#8A5A1E" },
+        { "index": 3,  "label": "Paper",   "sub": "⌃4", "kind": "tap", "keys": "Ctrl+4", "color": "#8A5A1E" },
+
+        { "index": 4,  "label": "Palette", "sub": "⌃K", "kind": "tap", "keys": "Ctrl+K", "color": "#2A3550" },
+        { "index": 5,  "label": "Chrome",  "sub": "Tab","kind": "tap", "keys": "Tab",    "color": "#2A3550" },
+        { "index": 6,  "label": "Keys",    "sub": "F1", "kind": "tap", "keys": "F1",     "color": "#2A3550" },
+        { "index": 7,  "label": "Gamepad", "kind": "tap", "keys": "Ctrl+Alt+G",          "color": "#2A3550" },
+
+        { "index": 8,  "label": "New",     "kind": "tap", "keys": "Ctrl+N" },
+        { "index": 9,  "label": "Open",    "kind": "tap", "keys": "Ctrl+O" },
+        { "index": 10, "label": "Save",    "kind": "tap", "keys": "Ctrl+S",       "color": "#2F6B4F" },
+        { "index": 11, "label": "Save as", "kind": "tap", "keys": "Ctrl+Shift+S", "color": "#2F6B4F" },
+
+        { "index": 12, "label": "Import",  "kind": "tap", "keys": "Ctrl+I" },
+        { "index": 13, "label": "Undo",    "kind": "tap", "keys": "Ctrl+Z",       "repeat_on_hold": true },
+        { "index": 14, "label": "Redo",    "kind": "tap", "keys": "Ctrl+Shift+Z", "repeat_on_hold": true },
+        { "index": 15, "label": "Invert",  "kind": "tap", "keys": "Ctrl+Shift+I" }
+      ]
+    },
+    {
+      "name": "Image tools",
+      "cols": 4,
+      "rows": 6,
+      "buttons": [
+        { "index": 0,  "label": "Hand",    "sub": "H", "kind": "tap", "keys": "H" },
+        { "index": 1,  "label": "Move",    "sub": "V", "kind": "tap", "keys": "V" },
+        { "index": 2,  "label": "Marquee", "sub": "M", "kind": "tap", "keys": "M" },
+        { "index": 3,  "label": "Lasso",   "sub": "L", "kind": "tap", "keys": "L" },
+
+        { "index": 4,  "label": "Wand",    "sub": "W", "kind": "tap", "keys": "W" },
+        { "index": 5,  "label": "Brush",   "sub": "B", "kind": "tap", "keys": "B", "color": "#8A5A1E" },
+        { "index": 6,  "label": "Pen",     "sub": "⇧B","kind": "tap", "keys": "Shift+B" },
+        { "index": 7,  "label": "Eraser",  "sub": "E", "kind": "tap", "keys": "E" },
+
+        { "index": 8,  "label": "Bg eras", "sub": "⌥E","kind": "tap", "keys": "Alt+E" },
+        { "index": 9,  "label": "Magic e", "sub": "⇧E","kind": "tap", "keys": "Shift+E" },
+        { "index": 10, "label": "Clone",   "sub": "S", "kind": "tap", "keys": "S" },
+        { "index": 11, "label": "Spot",    "sub": "J", "kind": "tap", "keys": "J" },
+
+        { "index": 12, "label": "Blur",    "sub": "R", "kind": "tap", "keys": "R" },
+        { "index": 13, "label": "Sharpen", "sub": "⇧R","kind": "tap", "keys": "Shift+R" },
+        { "index": 14, "label": "Smudge",  "sub": "U", "kind": "tap", "keys": "U" },
+        { "index": 15, "label": "Dodge",   "sub": "O", "kind": "tap", "keys": "O" },
+
+        { "index": 16, "label": "Burn",    "sub": "⇧O","kind": "tap", "keys": "Shift+O" },
+        { "index": 17, "label": "Sponge+", "sub": "P", "kind": "tap", "keys": "P" },
+        { "index": 18, "label": "Sponge−", "sub": "⇧P","kind": "tap", "keys": "Shift+P" },
+        { "index": 19, "label": "Bucket",  "sub": "G", "kind": "tap", "keys": "G" },
+
+        { "index": 20, "label": "Gradient","sub": "⇧G","kind": "tap", "keys": "Shift+G" },
+        { "index": 21, "label": "Rect",    "sub": "X", "kind": "tap", "keys": "X" },
+        { "index": 22, "label": "Ellipse", "sub": "⇧X","kind": "tap", "keys": "Shift+X" },
+        { "index": 23, "label": "Text",    "sub": "T", "kind": "tap", "keys": "T" }
+      ]
+    },
+    {
+      "name": "Timeline",
+      "cols": 4,
+      "rows": 4,
+      "buttons": [
+        { "index": 0,  "label": "Cut",     "sub": "C", "kind": "tap", "keys": "C", "color": "#8A5A1E" },
+        { "index": 1,  "label": "Hand",    "sub": "H", "kind": "tap", "keys": "H" },
+        { "index": 2,  "label": "Snap",    "sub": "M", "kind": "tap", "keys": "M" },
+        { "index": 3,  "label": "Zoom fit","sub": "⇧\\","kind": "tap", "keys": "Shift+\\" },
+
+        { "index": 4,  "label": "Zoom ▮",  "kind": "tap", "keys": "Ctrl+\\" },
+        { "index": 5,  "label": "Prev zm", "kind": "tap", "keys": "Alt+\\" },
+        { "index": 6,  "label": "Marker",  "kind": "tap", "keys": "Ctrl+M", "color": "#8A5A1E" },
+        { "index": 7,  "label": "Mk key",  "kind": "tap", "keys": "Shift+K" },
+
+        { "index": 8,  "label": "◀ Mark",  "kind": "tap", "keys": "Shift+M", "repeat_on_hold": true },
+        { "index": 9,  "label": "Mark ▶",  "kind": "tap", "keys": "Alt+M",   "repeat_on_hold": true },
+        { "index": 10, "label": "◀ Key",   "kind": "tap", "keys": "[",       "repeat_on_hold": true },
+        { "index": 11, "label": "Key ▶",   "kind": "tap", "keys": "]",       "repeat_on_hold": true },
+
+        { "index": 12, "label": "Link",    "kind": "tap", "keys": "Ctrl+L" },
+        { "index": 13, "label": "Unlink",  "kind": "tap", "keys": "Ctrl+Shift+L" },
+        { "index": 14, "label": "Group",   "kind": "tap", "keys": "Ctrl+G" },
+        { "index": 15, "label": "Ungroup", "kind": "tap", "keys": "Ctrl+Shift+G" }
+      ]
+    },
+    {
+      "name": "Paper",
+      "cols": 4,
+      "rows": 2,
+      "buttons": [
+        { "index": 0, "label": "Select",  "sub": "V", "kind": "tap", "keys": "V" },
+        { "index": 1, "label": "Hand",    "sub": "H", "kind": "tap", "keys": "H" },
+        { "index": 2, "label": "Text",    "sub": "T", "kind": "tap", "keys": "T" },
+        { "index": 3, "label": "Image",   "sub": "⇧I","kind": "tap", "keys": "Shift+I" },
+        { "index": 4, "label": "Picker",  "sub": "I", "kind": "tap", "keys": "I" },
+        { "index": 5, "label": "New doc", "kind": "tap", "keys": "Ctrl+Alt+N" },
+        { "index": 6, "label": "Add page","kind": "tap", "keys": "Ctrl+Alt+P", "color": "#8A5A1E" },
+        { "index": 7, "label": "PDF",     "kind": "tap", "keys": "Ctrl+P",     "color": "#2F6B4F" }
+      ]
+    }
+  ]
+}

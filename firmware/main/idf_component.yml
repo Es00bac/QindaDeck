@@ -1,0 +1,10 @@
+## QindaDeck firmware dependencies.
+dependencies:
+  idf: "^5.5"
+  # USB device stack. 2.x is the API with TINYUSB_DEFAULT_CONFIG() and the
+  # descriptor-in-config layout used by usb_hid.c.
+  espressif/esp_tinyusb:
+    version: "^2.0.0"
+  # Service discovery so the phone finds the deck without typing an IP.
+  espressif/mdns:
+    version: "^1.0.3"

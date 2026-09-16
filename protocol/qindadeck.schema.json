@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qinda.dev/schemas/qindadeck-1.json",
+  "title": "QindaDeck profile bundle",
+  "description": "Profiles, macros and display geometry exchanged between the QindaDeck Android app and the ESP32-S3 firmware.",
+  "type": "object",
+  "required": ["schema"],
+  "properties": {
+    "schema": { "const": 1 },
+    "profiles": { "type": "array", "items": { "$ref": "#/$defs/profile" } },
+    "displays": { "$ref": "#/$defs/displayConfig" }
+  },
+  "$defs": {
+    "slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{0,31}$" },
+    "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+    "button": {
+      "type": "object",
+      "required": ["index", "kind"],
+      "properties": {
+        "index": { "type": "integer", "minimum": 0, "maximum": 63 },
+        "label": { "type": "string", "maxLength": 24 },
+        "sub": { "type": "string", "maxLength": 24, "description": "Small caption under the label." },
+        "icon": { "type": ["string", "null"], "maxLength": 32 },
+        "color": { "$ref": "#/$defs/color" },
+        "kind": {
+          "enum": ["noop", "tap", "hold", "text", "consumer", "macro", "macro_ref", "page", "profile"]
+        },
+        "keys": { "type": "string", "description": "Chord, e.g. 'Ctrl+Shift+P'. Used by kind tap/hold." },
+        "text": { "type": "string", "maxLength": 512 },
+        "media": { "$ref": "#/$defs/mediaKey" },
+        "macro": { "$ref": "#/$defs/macro" },
+        "macro_ref": { "$ref": "#/$defs/slug" },
+        "page": { "type": "integer", "minimum": 0 },
+        "profile": { "$ref": "#/$defs/slug" },
+        "repeat_on_hold": { "type": "boolean", "default": false,
+          "description": "Auto-repeat the chord while the button is held (numpad arrows, volume)." }
+      },
+      "allOf": [
+        { "if": { "properties": { "kind": { "const": "tap" } }, "required": ["kind"] },
+          "then": { "required": ["keys"] } },
+        { "if": { "properties": { "kind": { "const": "hold" } }, "required": ["kind"] },
+          "then": { "required": ["keys"] } },
+        { "if": { "properties": { "kind": { "const": "text" } }, "required": ["kind"] },
+          "then": { "required": ["text"] } },
+        { "if": { "properties": { "kind": { "const": "consumer" } }, "required": ["kind"] },
+          "then": { "required": ["media"] } },
+        { "if": { "properties": { "kind": { "const": "macro" } }, "required": ["kind"] },
+          "then": { "required": ["macro"] } }
+      ]
+    },
+    "page": {
+      "type": "object",
+      "required": ["cols", "rows", "buttons"],
+      "properties": {
+        "name": { "type": "string", "maxLength": 32 },
+        "cols": { "type": "integer", "minimum": 1, "maximum": 8 },
+        "rows": { "type": "integer", "minimum": 1, "maximum": 8 },
+        "buttons": { "type": "array", "maxItems": 64, "items": { "$ref": "#/$defs/button" } }
+      }
+    },
+    "profile": {
+      "type": "object",
+      "required": ["slug", "name", "pages"],
+      "properties": {
+        "slug": { "$ref": "#/$defs/slug" },
+        "name": { "type": "string", "maxLength": 40 },
+        "icon": { "type": ["string", "null"] },
+        "accent": { "$ref": "#/$defs/color" },
+        "builtin": { "type": "boolean", "default": false,
+          "description": "Shipped with the firmware. Editable, but factory_reset restores it." },
+        "pages": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/page" } },
+        "macros": {
+          "type": "object",
+          "description": "Named macros referenced by macro_ref buttons within this profile.",
+          "additionalProperties": { "$ref": "#/$defs/macro" }
+        }
+      }
+    },
+    "macro": {
+      "type": "object",
+      "required": ["steps"],
+      "properties": {
+        "name": { "type": "string", "maxLength": 40 },
+        "loop": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 1 },
+        "steps": { "type": "array", "maxItems": 512, "items": { "$ref": "#/$defs/step" } }
+      }
+    },
+    "easing": { "enum": ["linear", "in", "out", "in_out"], "default": "in_out" },
+    "button_name": { "enum": ["left", "right", "middle", "back", "forward"] },
+    "point": {
+      "type": "object",
+      "required": ["x", "y"],
+      "properties": {
+        "x": { "type": "integer" },
+        "y": { "type": "integer" }
+      }
+    },
+    "mediaKey": {
+      "enum": ["play_pause", "stop", "next", "prev", "vol_up", "vol_down", "mute",
+               "bright_up", "bright_down", "launch_browser", "launch_mail",
+               "launch_calc", "launch_files", "search", "home", "back", "forward",
+               "refresh", "record", "rewind", "fast_forward", "eject"]
+    },
+    "step": {
+      "type": "object",
+      "required": ["t"],
+      "properties": {
+        "t": {
+          "enum": ["tap", "down", "up", "text", "consumer",
+                   "move_abs", "move_rel", "mdown", "mup", "click", "drag", "scroll",
+                   "delay", "repeat"]
+        },
+        "after": { "type": "integer", "minimum": 0, "maximum": 600000,
+          "description": "Idle this many ms after the step completes." },
+
+        "keys": { "type": "string" },
+        "s": { "type": "string", "maxLength": 512 },
+        "media": { "$ref": "#/$defs/mediaKey" },
+
+        "x": { "type": "integer" },
+        "y": { "type": "integer" },
+        "dx": { "type": "integer" },
+        "dy": { "type": "integer" },
+        "display": { "type": "string", "description": "Display id the x/y belong to." },
+        "dur": { "type": "integer", "minimum": 0, "maximum": 600000,
+          "description": "Travel time in ms. 0 teleports." },
+        "ease": { "$ref": "#/$defs/easing" },
+        "jitter": { "type": "integer", "minimum": 0, "maximum": 32,
+          "description": "Per-tick wobble in pixels, for hand-made looking motion." },
+
+        "btn": { "$ref": "#/$defs/button_name" },
+        "count": { "type": "integer", "minimum": 1, "maximum": 16 },
+        "gap": { "type": "integer", "minimum": 0, "maximum": 5000 },
+        "from": { "$ref": "#/$defs/point" },
+        "to": { "$ref": "#/$defs/point" },
+
+        "amount": { "type": "integer", "minimum": -1000, "maximum": 1000 },
+        "hamount": { "type": "integer", "minimum": -1000, "maximum": 1000 },
+
+        "ms": { "type": "integer", "minimum": 0, "maximum": 600000 },
+        "steps": { "type": "array", "items": { "$ref": "#/$defs/step" } }
+      },
+      "allOf": [
+        { "if": { "properties": { "t": { "enum": ["tap", "down", "up"] } }, "required": ["t"] },
+          "then": { "required": ["keys"] } },
+        { "if": { "properties": { "t": { "const": "text" } }, "required": ["t"] },
+          "then": { "required": ["s"] } },
+        { "if": { "properties": { "t": { "const": "move_abs" } }, "required": ["t"] },
+          "then": { "required": ["x", "y"] } },
+        { "if": { "properties": { "t": { "const": "move_rel" } }, "required": ["t"] },
+          "then": { "required": ["dx", "dy"] } },
+        { "if": { "properties": { "t": { "const": "drag" } }, "required": ["t"] },
+          "then": { "required": ["to"] } },
+        { "if": { "properties": { "t": { "const": "delay" } }, "required": ["t"] },
+          "then": { "required": ["ms"] } },
+        { "if": { "properties": { "t": { "const": "repeat" } }, "required": ["t"] },
+          "then": { "required": ["count", "steps"] } }
+      ]
+    },
+    "display": {
+      "type": "object",
+      "required": ["id", "w", "h", "x", "y"],
+      "properties": {
+        "id": { "$ref": "#/$defs/slug" },
+        "name": { "type": "string", "maxLength": 40 },
+        "w": { "type": "integer", "minimum": 64, "maximum": 32767 },
+        "h": { "type": "integer", "minimum": 64, "maximum": 32767 },
+        "x": { "type": "integer", "minimum": -32767, "maximum": 32767,
+          "description": "Left edge within the virtual desktop." },
+        "y": { "type": "integer", "minimum": -32767, "maximum": 32767 },
+        "scale": { "type": "number", "minimum": 0.25, "maximum": 8,
+          "description": "OS scale factor. Recorded for the editor; coordinates stay in device pixels." },
+        "primary": { "type": "boolean", "default": false }
+      }
+    },
+    "displayConfig": {
+      "type": "object",
+      "required": ["displays"],
+      "properties": {
+        "active": { "type": "string", "description": "Default display id for steps that omit one." },
+        "displays": { "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/display" } }
+      }
+    }
+  }
+}

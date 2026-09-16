@@ -1,0 +1,107 @@
+{
+  "schema": 1,
+  "slug": "mouse",
+  "name": "Mouse & macros",
+  "icon": "mouse",
+  "accent": "#E4574C",
+  "builtin": true,
+  "pages": [
+    {
+      "name": "Clicks",
+      "cols": 4,
+      "rows": 3,
+      "buttons": [
+        { "index": 0, "label": "Click",  "sub": "left", "kind": "macro", "color": "#8A2F28",
+          "macro": { "name": "Left click", "steps": [ { "t": "click", "btn": "left" } ] } },
+        { "index": 1, "label": "Double", "sub": "left", "kind": "macro",
+          "macro": { "name": "Double click",
+            "steps": [ { "t": "click", "btn": "left", "count": 2, "gap": 60 } ] } },
+        { "index": 2, "label": "Right",  "kind": "macro",
+          "macro": { "name": "Right click", "steps": [ { "t": "click", "btn": "right" } ] } },
+        { "index": 3, "label": "Middle", "kind": "macro",
+          "macro": { "name": "Middle click", "steps": [ { "t": "click", "btn": "middle" } ] } },
+
+        { "index": 4, "label": "Triple", "sub": "select line", "kind": "macro",
+          "macro": { "name": "Triple click",
+            "steps": [ { "t": "click", "btn": "left", "count": 3, "gap": 55 } ] } },
+        { "index": 5, "label": "Back",   "kind": "macro",
+          "macro": { "name": "Back", "steps": [ { "t": "click", "btn": "back" } ] } },
+        { "index": 6, "label": "Fwd",    "kind": "macro",
+          "macro": { "name": "Forward", "steps": [ { "t": "click", "btn": "forward" } ] } },
+        { "index": 7, "label": "Hold L", "sub": "toggle", "kind": "macro",
+          "macro": { "name": "Press and hold left", "steps": [ { "t": "mdown", "btn": "left" } ] } },
+
+        { "index": 8, "label": "Scroll ▲", "kind": "macro",
+          "macro": { "name": "Scroll up",
+            "steps": [ { "t": "scroll", "amount": 5, "dur": 180 } ] } },
+        { "index": 9, "label": "Scroll ▼", "kind": "macro",
+          "macro": { "name": "Scroll down",
+            "steps": [ { "t": "scroll", "amount": -5, "dur": 180 } ] } },
+        { "index": 10, "label": "Page ▲", "kind": "macro",
+          "macro": { "name": "Page up",
+            "steps": [ { "t": "scroll", "amount": 20, "dur": 500, "ease": "in_out" } ] } },
+        { "index": 11, "label": "Release", "sub": "all", "kind": "macro", "color": "#5A2F34",
+          "macro": { "name": "Release", "steps": [ { "t": "mup", "btn": "left" },
+                                                   { "t": "mup", "btn": "right" },
+                                                   { "t": "mup", "btn": "middle" } ] } }
+      ]
+    },
+    {
+      "name": "Travel demos",
+      "cols": 2,
+      "rows": 3,
+      "buttons": [
+        { "index": 0, "label": "Glide ⤡", "sub": "1.2 s ease", "kind": "macro", "color": "#8A2F28",
+          "macro": { "name": "Glide across", "steps": [
+            { "t": "move_abs", "x": 120,  "y": 120,  "dur": 500,  "ease": "out" },
+            { "t": "move_abs", "x": 1800, "y": 960,  "dur": 1200, "ease": "in_out", "jitter": 2 }
+          ] } },
+        { "index": 1, "label": "Drag box", "sub": "marquee", "kind": "macro",
+          "macro": { "name": "Drag a marquee", "steps": [
+            { "t": "drag", "from": { "x": 400, "y": 300 }, "to": { "x": 1100, "y": 780 },
+              "btn": "left", "dur": 900, "ease": "in_out", "jitter": 1 }
+          ] } },
+
+        { "index": 2, "label": "Circle", "sub": "eight steps", "kind": "macro",
+          "macro": { "name": "Trace a circle", "loop": 1, "steps": [
+            { "t": "move_abs", "x": 1260, "y": 540, "dur": 300, "ease": "out" },
+            { "t": "move_abs", "x": 1220, "y": 400, "dur": 160, "ease": "linear" },
+            { "t": "move_abs", "x": 1100, "y": 320, "dur": 160, "ease": "linear" },
+            { "t": "move_abs", "x": 960,  "y": 300, "dur": 160, "ease": "linear" },
+            { "t": "move_abs", "x": 820,  "y": 320, "dur": 160, "ease": "linear" },
+            { "t": "move_abs", "x": 700,  "y": 400, "dur": 160, "ease": "linear" },
+            { "t": "move_abs", "x": 660,  "y": 540, "dur": 160, "ease": "linear" },
+            { "t": "move_abs", "x": 700,  "y": 680, "dur": 160, "ease": "linear" },
+            { "t": "move_abs", "x": 820,  "y": 760, "dur": 160, "ease": "linear" },
+            { "t": "move_abs", "x": 960,  "y": 780, "dur": 160, "ease": "linear" },
+            { "t": "move_abs", "x": 1100, "y": 760, "dur": 160, "ease": "linear" },
+            { "t": "move_abs", "x": 1220, "y": 680, "dur": 160, "ease": "linear" },
+            { "t": "move_abs", "x": 1260, "y": 540, "dur": 160, "ease": "linear" }
+          ] } },
+        { "index": 3, "label": "Nudge", "sub": "relative", "kind": "macro",
+          "macro": { "name": "Nudge right", "steps": [
+            { "t": "move_rel", "dx": 240, "dy": 0, "dur": 400, "ease": "in_out" }
+          ] } },
+
+        { "index": 4, "label": "Pick & place", "sub": "drag then type", "kind": "macro_ref",
+          "macro_ref": "pick_place", "color": "#8A2F28" },
+        { "index": 5, "label": "Stop", "sub": "abort macro", "kind": "macro", "color": "#5A2F34",
+          "macro": { "name": "Idle", "steps": [ { "t": "delay", "ms": 1 } ] } }
+      ]
+    }
+  ],
+  "macros": {
+    "pick_place": {
+      "name": "Pick and place",
+      "steps": [
+        { "t": "move_abs", "x": 300, "y": 400, "dur": 420, "ease": "out" },
+        { "t": "mdown", "btn": "left", "after": 60 },
+        { "t": "move_abs", "x": 1500, "y": 640, "dur": 950, "ease": "in_out", "jitter": 2 },
+        { "t": "mup", "btn": "left", "after": 120 },
+        { "t": "tap", "keys": "Ctrl+S", "after": 200 },
+        { "t": "text", "s": "placed.png" },
+        { "t": "tap", "keys": "Return" }
+      ]
+    }
+  }
+}

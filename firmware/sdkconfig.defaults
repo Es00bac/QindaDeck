@@ -1,0 +1,38 @@
+# --- Target and flash -------------------------------------------------------
+CONFIG_IDF_TARGET="esp32s3"
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+CONFIG_ESPTOOLPY_FLASHMODE_DIO=y
+CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+# The board has 8 MB of PSRAM but nothing here needs it, and leaving it off
+# keeps the boot path short and avoids octal/quad mode guesswork.
+
+# --- Timing -----------------------------------------------------------------
+# A 1 kHz tick is required: the macro engine runs on an 8 ms beat and the
+# default 100 Hz tick would quantise every motion step to 10 ms.
+CONFIG_FREERTOS_HZ=1000
+
+# --- USB --------------------------------------------------------------------
+# One HID interface carrying four report IDs (keyboard, rel mouse, consumer,
+# abs pointer).
+CONFIG_TINYUSB_HID_COUNT=1
+
+# --- Tasks ------------------------------------------------------------------
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=6144
+
+# --- Networking -------------------------------------------------------------
+CONFIG_LWIP_MAX_SOCKETS=10
+CONFIG_LWIP_TCP_MSS=1436
+CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM=8
+CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM=24
+# TCP_NODELAY matters a lot for a control link; Nagle would add ~40 ms to taps.
+CONFIG_LWIP_TCP_SND_BUF_DEFAULT=11680
+CONFIG_LWIP_TCP_WND_DEFAULT=11680
+
+# --- HTTP server (Wi-Fi provisioning page) ---------------------------------
+CONFIG_HTTPD_MAX_REQ_HDR_LEN=1024
+
+# --- Logging ----------------------------------------------------------------
+CONFIG_LOG_DEFAULT_LEVEL_INFO=y

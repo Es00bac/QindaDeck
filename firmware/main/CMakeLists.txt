@@ -1,0 +1,32 @@
+idf_component_register(
+    SRCS
+        "main.c"
+        "usb_hid.c"
+        "hid_keymap.c"
+        "motion.c"
+        "macro.c"
+        "displays.c"
+        "profiles.c"
+        "defaults.c"
+        "net_link.c"
+        "protocol.c"
+        "provision.c"
+    INCLUDE_DIRS "."
+    REQUIRES
+        esp_wifi
+        esp_netif
+        esp_event
+        nvs_flash
+        spiffs
+        json
+        esp_http_server
+        esp_timer
+    EMBED_TXTFILES
+        "profiles/numpad.json"
+        "profiles/fkeys.json"
+        "profiles/media.json"
+        "profiles/photoshop.json"
+        "profiles/sloom.json"
+        "profiles/qindaqt.json"
+        "profiles/mouse.json"
+)

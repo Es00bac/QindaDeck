@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "slug": "numpad",
+  "name": "Numpad",
+  "icon": "dialpad",
+  "accent": "#4F8DF5",
+  "builtin": true,
+  "pages": [
+    {
+      "name": "Keypad",
+      "cols": 4,
+      "rows": 5,
+      "buttons": [
+        { "index": 0,  "label": "Num",  "sub": "lock", "kind": "tap", "keys": "NumLock",        "color": "#2A3550" },
+        { "index": 1,  "label": "/",                   "kind": "tap", "keys": "NumpadDivide",   "color": "#2A3550" },
+        { "index": 2,  "label": "*",                   "kind": "tap", "keys": "NumpadMultiply", "color": "#2A3550" },
+        { "index": 3,  "label": "-",                   "kind": "tap", "keys": "NumpadSubtract", "color": "#2A3550" },
+
+        { "index": 4,  "label": "7", "kind": "tap", "keys": "Numpad7" },
+        { "index": 5,  "label": "8", "kind": "tap", "keys": "Numpad8" },
+        { "index": 6,  "label": "9", "kind": "tap", "keys": "Numpad9" },
+        { "index": 7,  "label": "+", "kind": "tap", "keys": "NumpadAdd", "color": "#2A3550" },
+
+        { "index": 8,  "label": "4", "kind": "tap", "keys": "Numpad4" },
+        { "index": 9,  "label": "5", "kind": "tap", "keys": "Numpad5" },
+        { "index": 10, "label": "6", "kind": "tap", "keys": "Numpad6" },
+        { "index": 11, "label": "Enter", "kind": "tap", "keys": "NumpadEnter", "color": "#2F6B4F" },
+
+        { "index": 12, "label": "1", "kind": "tap", "keys": "Numpad1" },
+        { "index": 13, "label": "2", "kind": "tap", "keys": "Numpad2" },
+        { "index": 14, "label": "3", "kind": "tap", "keys": "Numpad3" },
+        { "index": 15, "label": "⌫", "sub": "bksp", "kind": "tap", "keys": "Backspace",
+          "repeat_on_hold": true, "color": "#5A2F34" },
+
+        { "index": 16, "label": "0", "kind": "tap", "keys": "Numpad0" },
+        { "index": 17, "label": ".", "kind": "tap", "keys": "NumpadDecimal" },
+        { "index": 18, "label": "Tab", "kind": "tap", "keys": "Tab", "color": "#2A3550" },
+        { "index": 19, "label": "Esc", "kind": "tap", "keys": "Escape", "color": "#2A3550" }
+      ]
+    }
+  ]
+}

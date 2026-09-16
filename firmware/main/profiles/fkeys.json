@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "slug": "fkeys",
+  "name": "Function keys",
+  "icon": "keyboard",
+  "accent": "#8B5CF6",
+  "builtin": true,
+  "pages": [
+    {
+      "name": "F1 – F12",
+      "cols": 4,
+      "rows": 3,
+      "buttons": [
+        { "index": 0,  "label": "F1",  "kind": "tap", "keys": "F1" },
+        { "index": 1,  "label": "F2",  "kind": "tap", "keys": "F2" },
+        { "index": 2,  "label": "F3",  "kind": "tap", "keys": "F3" },
+        { "index": 3,  "label": "F4",  "kind": "tap", "keys": "F4" },
+        { "index": 4,  "label": "F5",  "kind": "tap", "keys": "F5" },
+        { "index": 5,  "label": "F6",  "kind": "tap", "keys": "F6" },
+        { "index": 6,  "label": "F7",  "kind": "tap", "keys": "F7" },
+        { "index": 7,  "label": "F8",  "kind": "tap", "keys": "F8" },
+        { "index": 8,  "label": "F9",  "kind": "tap", "keys": "F9" },
+        { "index": 9,  "label": "F10", "kind": "tap", "keys": "F10" },
+        { "index": 10, "label": "F11", "kind": "tap", "keys": "F11" },
+        { "index": 11, "label": "F12", "kind": "tap", "keys": "F12" }
+      ]
+    },
+    {
+      "name": "F13 – F24",
+      "cols": 4,
+      "rows": 3,
+      "buttons": [
+        { "index": 0,  "label": "F13", "kind": "tap", "keys": "F13", "color": "#3A2D5C" },
+        { "index": 1,  "label": "F14", "kind": "tap", "keys": "F14", "color": "#3A2D5C" },
+        { "index": 2,  "label": "F15", "kind": "tap", "keys": "F15", "color": "#3A2D5C" },
+        { "index": 3,  "label": "F16", "kind": "tap", "keys": "F16", "color": "#3A2D5C" },
+        { "index": 4,  "label": "F17", "kind": "tap", "keys": "F17", "color": "#3A2D5C" },
+        { "index": 5,  "label": "F18", "kind": "tap", "keys": "F18", "color": "#3A2D5C" },
+        { "index": 6,  "label": "F19", "kind": "tap", "keys": "F19", "color": "#3A2D5C" },
+        { "index": 7,  "label": "F20", "kind": "tap", "keys": "F20", "color": "#3A2D5C" },
+        { "index": 8,  "label": "F21", "kind": "tap", "keys": "F21", "color": "#3A2D5C" },
+        { "index": 9,  "label": "F22", "kind": "tap", "keys": "F22", "color": "#3A2D5C" },
+        { "index": 10, "label": "F23", "kind": "tap", "keys": "F23", "color": "#3A2D5C" },
+        { "index": 11, "label": "F24", "kind": "tap", "keys": "F24", "color": "#3A2D5C" }
+      ]
+    },
+    {
+      "name": "Shifted",
+      "cols": 4,
+      "rows": 3,
+      "buttons": [
+        { "index": 0,  "label": "⇧F1", "kind": "tap", "keys": "Shift+F1", "color": "#2A3550" },
+        { "index": 1,  "label": "⇧F2", "kind": "tap", "keys": "Shift+F2", "color": "#2A3550" },
+        { "index": 2,  "label": "⇧F3", "kind": "tap", "keys": "Shift+F3", "color": "#2A3550" },
+        { "index": 3,  "label": "⇧F4", "kind": "tap", "keys": "Shift+F4", "color": "#2A3550" },
+        { "index": 4,  "label": "⌃F1", "kind": "tap", "keys": "Ctrl+F1",  "color": "#2A3550" },
+        { "index": 5,  "label": "⌃F2", "kind": "tap", "keys": "Ctrl+F2",  "color": "#2A3550" },
+        { "index": 6,  "label": "⌃F3", "kind": "tap", "keys": "Ctrl+F3",  "color": "#2A3550" },
+        { "index": 7,  "label": "⌃F4", "kind": "tap", "keys": "Ctrl+F4",  "color": "#2A3550" },
+        { "index": 8,  "label": "⌥F1", "kind": "tap", "keys": "Alt+F1",   "color": "#2A3550" },
+        { "index": 9,  "label": "⌥F2", "kind": "tap", "keys": "Alt+F2",   "color": "#2A3550" },
+        { "index": 10, "label": "⌥F3", "kind": "tap", "keys": "Alt+F3",   "color": "#2A3550" },
+        { "index": 11, "label": "⌥F4", "kind": "tap", "keys": "Alt+F4",   "color": "#2A3550" }
+      ]
+    }
+  ]
+}

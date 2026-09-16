@@ -1,0 +1,21 @@
+# ESP-IDF build output and resolved dependencies
+firmware/build/
+firmware/managed_components/
+firmware/sdkconfig
+firmware/sdkconfig.old
+firmware/dependencies.lock
+
+# Gradle / Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+*.apk
+*.aab
+*.keystore
+
+# Editors and OS noise
+*.swp
+.DS_Store
+__pycache__/

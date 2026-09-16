@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "slug": "media",
+  "name": "Multimedia",
+  "icon": "play_circle",
+  "accent": "#12B981",
+  "builtin": true,
+  "pages": [
+    {
+      "name": "Transport",
+      "cols": 4,
+      "rows": 4,
+      "buttons": [
+        { "index": 0,  "label": "⏮", "sub": "prev",  "kind": "consumer", "media": "prev" },
+        { "index": 1,  "label": "⏯", "sub": "play",  "kind": "consumer", "media": "play_pause", "color": "#16794F" },
+        { "index": 2,  "label": "⏭", "sub": "next",  "kind": "consumer", "media": "next" },
+        { "index": 3,  "label": "⏹", "sub": "stop",  "kind": "consumer", "media": "stop" },
+
+        { "index": 4,  "label": "🔈−", "sub": "vol down", "kind": "consumer", "media": "vol_down",
+          "repeat_on_hold": true },
+        { "index": 5,  "label": "🔊+", "sub": "vol up",   "kind": "consumer", "media": "vol_up",
+          "repeat_on_hold": true },
+        { "index": 6,  "label": "🔇", "sub": "mute", "kind": "consumer", "media": "mute", "color": "#5A2F34" },
+        { "index": 7,  "label": "⏺", "sub": "record", "kind": "consumer", "media": "record", "color": "#5A2F34" },
+
+        { "index": 8,  "label": "⏪", "sub": "rewind", "kind": "consumer", "media": "rewind" },
+        { "index": 9,  "label": "⏩", "sub": "ff",     "kind": "consumer", "media": "fast_forward" },
+        { "index": 10, "label": "☀−", "sub": "dimmer", "kind": "consumer", "media": "bright_down",
+          "repeat_on_hold": true },
+        { "index": 11, "label": "☀+", "sub": "brighter", "kind": "consumer", "media": "bright_up",
+          "repeat_on_hold": true },
+
+        { "index": 12, "label": "Web",   "kind": "consumer", "media": "launch_browser", "color": "#2A3550" },
+        { "index": 13, "label": "Files", "kind": "consumer", "media": "launch_files",   "color": "#2A3550" },
+        { "index": 14, "label": "Mail",  "kind": "consumer", "media": "launch_mail",    "color": "#2A3550" },
+        { "index": 15, "label": "Calc",  "kind": "consumer", "media": "launch_calc",    "color": "#2A3550" }
+      ]
+    },
+    {
+      "name": "Browser",
+      "cols": 4,
+      "rows": 2,
+      "buttons": [
+        { "index": 0, "label": "Back",    "kind": "consumer", "media": "back" },
+        { "index": 1, "label": "Forward", "kind": "consumer", "media": "forward" },
+        { "index": 2, "label": "Reload",  "kind": "consumer", "media": "refresh" },
+        { "index": 3, "label": "Search",  "kind": "consumer", "media": "search" },
+        { "index": 4, "label": "Home",    "kind": "consumer", "media": "home" },
+        { "index": 5, "label": "New tab", "kind": "tap", "keys": "Ctrl+T",       "color": "#2A3550" },
+        { "index": 6, "label": "Close",   "kind": "tap", "keys": "Ctrl+W",       "color": "#2A3550" },
+        { "index": 7, "label": "Reopen",  "kind": "tap", "keys": "Ctrl+Shift+T", "color": "#2A3550" }
+      ]
+    }
+  ]
+}
