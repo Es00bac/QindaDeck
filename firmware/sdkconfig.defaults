@@ -51,3 +51,8 @@ CONFIG_BT_BLE_42_FEATURES_SUPPORTED=y
 CONFIG_BT_GATTC_NOTIF_REG_MAX=16
 # Wi-Fi and BLE share the radio, so the coexistence arbiter is required.
 CONFIG_ESP_COEX_SW_COEXIST_ENABLE=y
+
+# Composite HID + Mass Storage (the SD slot as a USB drive).
+CONFIG_TINYUSB_MSC_ENABLED=y
+# SCSI data FIFO: bigger chunks mean fewer bulk round-trips per megabyte.
+CONFIG_TINYUSB_MSC_BUFSIZE=4096

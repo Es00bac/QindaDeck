@@ -47,12 +47,13 @@ unsolicited device events.
 ```json
 → {"id":7,"op":"hello"}
 ← {"id":7,"ok":true,"fw":"1.0.0","chip":"esp32s3","mac":"7c:df:a1:e3:10:44",
-   "usb":true,"heap":184320,"active":"numpad","page":0,"profiles":6}
+   "usb":true,"sd":true,"sd_mb":29815,"heap":184320,"active":"qindaqt","page":0,
+   "profiles":6}
 ```
 
 | op | payload | reply |
 | --- | --- | --- |
-| `hello` | — | device identity + state |
+| `hello` | — | device identity + state; `sd` reports a card live as the USB LUN, `sd_mb` its capacity |
 | `get_status` | — | `heap`, `uptime`, `usb`, `running` (macro name or null) |
 | `list_profiles` | — | `profiles`: `[{slug,name,icon,accent,pages}]` |
 | `get_profile` | `slug` | `profile`: full object |

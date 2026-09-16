@@ -18,6 +18,7 @@
 #include "nvs_flash.h"
 #include "profiles.h"
 #include "protocol.h"
+#include "sdcard.h"
 #include "remap.h"
 #include "provision.h"
 #include "usb_hid.h"
@@ -51,6 +52,12 @@ void app_main(void)
         e = nvs_flash_init();
     }
     ESP_ERROR_CHECK(e);
+
+    /* A card already in the slot becomes the MSC LUN at enumeration time; the
+     * retry task picks up cards inserted later. Probing first is what lets a
+     * boot-menu BIOS see the drive on the very first connect. */
+    sdcard_init();
+    sdcard_start_retry_task();
 
     /* The host should enumerate us as a keyboard whether or not there is a
      * network to be found, so USB comes up before Wi-Fi. */

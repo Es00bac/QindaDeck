@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "class/hid/hid_device.h"
+#include "class/msc/msc_device.h"
 #include "deck_config.h"
 #include "esp_log.h"
 #include "esp_mac.h"
@@ -61,23 +62,41 @@ static const uint8_t s_report_desc[] = {
     DECK_REPORT_DESC_ABSPTR(HID_REPORT_ID(DECK_RPT_ABSPTR)),
 };
 
-#define DECK_CFG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN)
+/* Interface and endpoint plan for the composite device:
+ *
+ *   ITF 0  HID        keyboard/mouse/consumer/abs-pointer, interrupt EP 0x81
+ *   ITF 1  MSC        the SD slot as a plain USB drive, bulk EPs 0x02/0x82
+ *
+ * The device class stays per-interface (0x00), the same shape card readers
+ * use, so BIOS, Windows and Linux each bind class drivers directly without
+ * needing IADs. That matters for the boot-a-live-image use case: the firmware
+ * setup screen sees an ordinary keyboard and an ordinary drive. */
+#define DECK_ITF_HID       0
+#define DECK_ITF_MSC       1
+#define DECK_ITF_COUNT     2
+
+#define DECK_EPNUM_MSC_OUT 0x02
+#define DECK_EPNUM_MSC_IN  0x82
+
+#define DECK_CFG_TOTAL_LEN     (TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN + TUD_MSC_DESC_LEN)
 
 /* bInterval 1 => a 1 ms polling interval at full speed. The macro engine ticks
  * every 8 ms, so the endpoint is never the bottleneck for smooth motion. */
 static const uint8_t s_cfg_desc[] = {
-    TUD_CONFIG_DESCRIPTOR(1, 1, 0, DECK_CFG_TOTAL_LEN,
+    TUD_CONFIG_DESCRIPTOR(1, DECK_ITF_COUNT, 0, DECK_CFG_TOTAL_LEN,
                           TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
-    TUD_HID_DESCRIPTOR(0, 4, false, sizeof(s_report_desc), 0x81, 16, 1),
+    TUD_HID_DESCRIPTOR(DECK_ITF_HID, 4, false, sizeof(s_report_desc), 0x81, 16, 1),
+    TUD_MSC_DESCRIPTOR(DECK_ITF_MSC, 5, DECK_EPNUM_MSC_OUT, DECK_EPNUM_MSC_IN, 64),
 };
 
 static char s_serial[13];
-static const char *s_strings[5] = {
+static const char *s_strings[6] = {
     (char[]){0x09, 0x04},  /* English (0x0409) */
     "Qinda",
     "QindaDeck",
     s_serial,
     "QindaDeck HID",
+    "QindaDeck SD",
 };
 
 /* ------------------------------------------------------------------ state */
@@ -187,7 +206,7 @@ void usb_hid_init(void)
     cfg.descriptor.high_speed_config = s_cfg_desc;
 #endif
     ESP_ERROR_CHECK(tinyusb_driver_install(&cfg));
-    ESP_LOGI(TAG, "composite HID up, serial %s", s_serial);
+    ESP_LOGI(TAG, "composite HID+MSC up, serial %s", s_serial);
 }
 
 bool usb_hid_mounted(void)

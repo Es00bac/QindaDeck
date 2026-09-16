@@ -18,6 +18,7 @@
 #include "net_link.h"
 #include "profiles.h"
 #include "remap.h"
+#include "sdcard.h"
 #include "usb_hid.h"
 
 static const char *TAG = "proto";
@@ -62,6 +63,8 @@ static void add_identity(cJSON *o)
     cJSON_AddStringToObject(o, "name", name);
     cJSON_AddStringToObject(o, "ip", ip);
     cJSON_AddBoolToObject(o, "usb", usb_hid_mounted());
+    cJSON_AddBoolToObject(o, "sd", sdcard_present());
+    cJSON_AddNumberToObject(o, "sd_mb", (double)(sdcard_capacity_bytes() >> 20));
     cJSON_AddBoolToObject(o, "ap", net_link_ap_mode());
     cJSON_AddNumberToObject(o, "heap", (double)esp_get_free_heap_size());
     cJSON_AddNumberToObject(o, "uptime", (double)(esp_timer_get_time() / 1000000));

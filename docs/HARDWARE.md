@@ -51,6 +51,33 @@ factory    0x010000    4 MiB   app (about 1.4 MiB used with Bluetooth enabled)
 storage    0x410000    2 MiB   SPIFFS: profile and remap JSON
 ```
 
+## The SD slot
+
+Boards that carry a micro SD slot can expose the card to the host as a USB
+mass storage device, composite with the HID. The firmware serves raw sectors
+straight from the card and never mounts the filesystem itself, so the card is
+safe to hold a bootable image: write a live distro to it, reboot the host,
+pick the drive in the boot menu, and navigate with the deck's keyboard.
+
+The wiring is board-specific. Fill in `deck_config.h`:
+
+| Define | SD pin |
+| --- | --- |
+| `DECK_SD_PIN_CLK` | CLK |
+| `DECK_SD_PIN_CMD` | CMD |
+| `DECK_SD_PIN_D0` | DAT0 |
+| `DECK_SD_PIN_D1` | DAT1 (4-bit mode only) |
+| `DECK_SD_PIN_D2` | DAT2 (4-bit mode only) |
+| `DECK_SD_PIN_D3` | DAT3 / CS (4-bit mode only) |
+| `DECK_SD_WIDTH` | `1` or `4` data lines |
+
+Until the pins are right, the firmware logs "SD pins are not configured" at
+boot and the host sees an empty card reader — HID is unaffected. Start with
+1-bit mode: the full-speed USB link caps throughput at roughly 0.5–1 MB/s
+either way, so four wires buy nothing but doubt. Cards inserted after boot are
+picked up by a re-probe every four seconds (the slot has no detect line).
+Expect around six minutes per gigabyte when booting or copying images.
+
 ## What the host sees
 
 One USB HID interface carrying four report IDs:
@@ -61,6 +88,11 @@ One USB HID interface carrying four report IDs:
 | 2 | Relative mouse — buttons, dx, dy, wheel, pan |
 | 3 | Consumer control — one 16-bit media usage |
 | 4 | Absolute pointer — buttons, 16-bit X and Y over 0..32767, wheel |
+
+Alongside it sits one mass storage interface (bulk-only transport), which is
+how the SD card presents as a drive. The device class is per-interface, so
+BIOS, Windows and Linux bind each interface to its own class driver with no
+IAD in the way.
 
 The interface requests a 1 ms polling interval, so the macro engine's 8 ms beat is
 never limited by the endpoint.
