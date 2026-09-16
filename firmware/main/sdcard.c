@@ -104,7 +104,7 @@ esp_err_t sdcard_init(void)
     }
 
     ESP_LOGI(TAG, "card: %llu MiB, %d-line mode @ %d kHz",
-             (unsigned long long)(sdcard_capacity_bytes() >> 20),
+             (unsigned long long)s_card.csd.capacity * 512ULL >> 20,
              DECK_SD_WIDTH, host.max_freq_khz);
 
     /* Hand the whole card to the USB host. do_not_format matters: this card

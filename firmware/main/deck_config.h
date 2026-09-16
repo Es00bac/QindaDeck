@@ -39,12 +39,13 @@
  * slot's CLK/CMD/DAT lines from the board's schematic. DAT1..3 are only used
  * when DECK_SD_WIDTH is 4; with 1-bit mode they may be left as GPIO_NUM_NC.
  *
- * The defaults below are placeholders pending confirmation of the target
- * board's pinout — the SD side simply will not probe until they are right.
+ * Freenove ESP32-S3 WROOM v1.2: the slot is wired for 1-bit SDMMC — only
+ * CLK/CMD/DAT0 are connected (GPIO39/38/40 per the board pinout), so DAT1..3
+ * stay unassigned and the width must be 1.
  */
-#define DECK_SD_PIN_CLK      GPIO_NUM_NC
-#define DECK_SD_PIN_CMD      GPIO_NUM_NC
-#define DECK_SD_PIN_D0       GPIO_NUM_NC
+#define DECK_SD_PIN_CLK      GPIO_NUM_39
+#define DECK_SD_PIN_CMD      GPIO_NUM_38
+#define DECK_SD_PIN_D0       GPIO_NUM_40
 #define DECK_SD_PIN_D1       GPIO_NUM_NC
 #define DECK_SD_PIN_D2       GPIO_NUM_NC
 #define DECK_SD_PIN_D3       GPIO_NUM_NC

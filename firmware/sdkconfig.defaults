@@ -56,3 +56,9 @@ CONFIG_ESP_COEX_SW_COEXIST_ENABLE=y
 CONFIG_TINYUSB_MSC_ENABLED=y
 # SCSI data FIFO: bigger chunks mean fewer bulk round-trips per megabyte.
 CONFIG_TINYUSB_MSC_BUFSIZE=4096
+
+# exFAT: SDXC cards (64 GB+) are exFAT out of the box. This IDF has no
+# Kconfig switch for it — FF_FS_EXFAT is patched to 1 in the IDF's ffconf.h
+# (see docs/HARDWARE.md). LFN must be on for exFAT to mount.
+CONFIG_FATFS_LFN_HEAP=y
+CONFIG_FATFS_USE_LABEL=y

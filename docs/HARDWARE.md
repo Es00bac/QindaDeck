@@ -59,7 +59,11 @@ straight from the card and never mounts the filesystem itself, so the card is
 safe to hold a bootable image: write a live distro to it, reboot the host,
 pick the drive in the boot menu, and navigate with the deck's keyboard.
 
-The wiring is board-specific. Fill in `deck_config.h`:
+The wiring is board-specific; this project is built for the **Freenove
+ESP32-S3 WROOM v1.2**, whose slot is wired 1-bit only: CLK=GPIO39,
+CMD=GPIO38, DAT0=GPIO40 (the board pinout marks them SD_CLK/SD_CMD/SD_DATA;
+DAT1..3 are not connected). `deck_config.h` carries exactly that. For any
+other board, fill in `deck_config.h` from its schematic:
 
 | Define | SD pin |
 | --- | --- |
@@ -72,11 +76,25 @@ The wiring is board-specific. Fill in `deck_config.h`:
 | `DECK_SD_WIDTH` | `1` or `4` data lines |
 
 Until the pins are right, the firmware logs "SD pins are not configured" at
-boot and the host sees an empty card reader — HID is unaffected. Start with
-1-bit mode: the full-speed USB link caps throughput at roughly 0.5–1 MB/s
-either way, so four wires buy nothing but doubt. Cards inserted after boot are
-picked up by a re-probe every four seconds (the slot has no detect line).
-Expect around six minutes per gigabyte when booting or copying images.
+boot and the host sees an empty card reader — HID is unaffected. Cards
+inserted after boot are picked up by a re-probe every four seconds (the slot
+has no detect line). Expect around six minutes per gigabyte when booting or
+copying images.
+
+### exFAT needs a one-line IDF patch
+
+SDXC cards (64 GB and up) are exFAT out of the box, and this IDF ships FatFS
+with `FF_FS_EXFAT` set to 0 and no Kconfig switch to change it. The patch is
+tracked in `firmware/patches/0001-fatfs-enable-exfat.patch` and applied to the
+IDF checkout with:
+
+```sh
+tools/patch-idf.sh            # idempotent; --revert to undo
+```
+
+`CONFIG_FATFS_LFN_HEAP=y` and `CONFIG_FATFS_USE_LABEL=y` are set in
+`sdkconfig.defaults`; both are required for the exFAT code path to build and
+mount. Cards reformatted as FAT32 work with or without the patch.
 
 ## What the host sees
 
