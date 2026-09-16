@@ -172,93 +172,146 @@ void net_link_send_json(cJSON *obj)
     free(txt);
 }
 
-static void serve_client(int fd)
+/* Incremental frame parser state for the one attached client.
+ *
+ * Parsing has to be incremental rather than a blocking read loop, because the
+ * same task also has to keep watching the listening socket. */
+typedef struct {
+    int fd;
+    uint8_t hdr[5];
+    size_t hdr_got;
+    uint8_t *payload;
+    size_t payload_cap;
+    size_t payload_got;
+    size_t payload_need;
+    uint8_t type;
+} client_t;
+
+static void client_reset_frame(client_t *c)
+{
+    c->hdr_got = 0;
+    c->payload_got = 0;
+    c->payload_need = 0;
+}
+
+static void client_close(client_t *c)
+{
+    if (c->fd < 0) {
+        return;
+    }
+    xSemaphoreTake(s_send_lock, portMAX_DELAY);
+    if (s_client == c->fd) {
+        s_client = -1;
+    }
+    xSemaphoreGive(s_send_lock);
+    close(c->fd);
+    c->fd = -1;
+    client_reset_frame(c);
+    ESP_LOGI(TAG, "client gone");
+}
+
+/* Consume one chunk of received bytes, dispatching every complete frame in it.
+ * Returns false if the stream is unusable and the client should be dropped. */
+static bool client_feed(client_t *c, const uint8_t *buf, size_t len)
+{
+    size_t off = 0;
+    while (off < len) {
+        if (c->hdr_got < sizeof(c->hdr)) {
+            size_t want = sizeof(c->hdr) - c->hdr_got;
+            size_t take = (len - off) < want ? (len - off) : want;
+            memcpy(c->hdr + c->hdr_got, buf + off, take);
+            c->hdr_got += take;
+            off += take;
+            if (c->hdr_got < sizeof(c->hdr)) {
+                return true;
+            }
+
+            uint32_t flen = ((uint32_t)c->hdr[0] << 24) | ((uint32_t)c->hdr[1] << 16) |
+                            ((uint32_t)c->hdr[2] << 8) | (uint32_t)c->hdr[3];
+            c->type = c->hdr[4];
+            if (flen == 0 || flen > DECK_MAX_FRAME) {
+                ESP_LOGW(TAG, "frame length %" PRIu32 " out of range", flen);
+                return false;
+            }
+            c->payload_need = flen - 1;
+            c->payload_got = 0;
+
+            if (c->payload_need > c->payload_cap) {
+                uint8_t *n = realloc(c->payload, c->payload_need + 1);
+                if (!n) {
+                    ESP_LOGE(TAG, "cannot allocate %u byte frame", (unsigned)c->payload_need);
+                    return false;
+                }
+                c->payload = n;
+                c->payload_cap = c->payload_need;
+            }
+        }
+
+        if (c->payload_got < c->payload_need) {
+            size_t want = c->payload_need - c->payload_got;
+            size_t take = (len - off) < want ? (len - off) : want;
+            memcpy(c->payload + c->payload_got, buf + off, take);
+            c->payload_got += take;
+            off += take;
+            if (c->payload_got < c->payload_need) {
+                return true;
+            }
+        }
+
+        if (c->payload) {
+            c->payload[c->payload_need] = 0;
+        }
+        if (c->type != DECK_FRAME_PING) {
+            protocol_handle_frame(c->type, c->payload, c->payload_need);
+        }
+        client_reset_frame(c);
+    }
+    return true;
+}
+
+static void adopt_client(client_t *c, int fd)
 {
     int one = 1;
     /* Nagle would add tens of milliseconds to every tap; a control link cares
      * far more about latency than about packet count. */
     setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
-    struct timeval tv = {.tv_sec = 30, .tv_usec = 0};
-    setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
-    uint8_t hdr[5];
-    uint8_t *payload = NULL;
-    size_t payload_cap = 0;
+    /* A phone that goes to sleep, loses Wi-Fi, or is force-stopped leaves a
+     * half-open socket with no FIN. Without keepalive the deck would hold it
+     * forever and refuse the user's next connection. */
+    setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof(one));
+    int idle = 10, intvl = 5, cnt = 3;   /* dead peer detected in ~25 s */
+    setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &idle, sizeof(idle));
+    setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &intvl, sizeof(intvl));
+    setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &cnt, sizeof(cnt));
 
-    for (;;) {
-        /* Header. */
-        size_t got = 0;
-        while (got < sizeof(hdr)) {
-            int n = recv(fd, hdr + got, sizeof(hdr) - got, 0);
-            if (n == 0) {
-                goto done;
-            }
-            if (n < 0) {
-                if (errno == EINTR) continue;
-                if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    /* Idle. A phone that has gone to sleep will be replaced by
-                     * its own reconnect, so just keep waiting. */
-                    continue;
-                }
-                goto done;
-            }
-            got += (size_t)n;
-        }
+    /* A wedged peer must not be able to block a write forever either. */
+    struct timeval snd = {.tv_sec = 5, .tv_usec = 0};
+    setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &snd, sizeof(snd));
 
-        uint32_t flen = ((uint32_t)hdr[0] << 24) | ((uint32_t)hdr[1] << 16) |
-                        ((uint32_t)hdr[2] << 8) | (uint32_t)hdr[3];
-        uint8_t type = hdr[4];
-        if (flen == 0 || flen > DECK_MAX_FRAME) {
-            ESP_LOGW(TAG, "frame length %" PRIu32 " out of range", flen);
-            goto done;
-        }
-        size_t body = flen - 1;
-
-        if (body > payload_cap) {
-            uint8_t *n = realloc(payload, body + 1);
-            if (!n) {
-                ESP_LOGE(TAG, "cannot allocate %u byte frame", (unsigned)body);
-                goto done;
-            }
-            payload = n;
-            payload_cap = body;
-        }
-        got = 0;
-        while (got < body) {
-            int n = recv(fd, payload + got, body - got, 0);
-            if (n == 0) {
-                goto done;
-            }
-            if (n < 0) {
-                if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) continue;
-                goto done;
-            }
-            got += (size_t)n;
-        }
-        if (payload) {
-            payload[body] = 0;
-        }
-
-        if (type == DECK_FRAME_PING) {
-            continue;
-        }
-        protocol_handle_frame(type, payload, body);
+    /* Displace whatever was attached. This is the documented behaviour and it
+     * only works because accept() is reached from the same select loop that
+     * services the client, rather than after it. */
+    if (c->fd >= 0) {
+        ESP_LOGI(TAG, "displacing the previous client");
+        shutdown(c->fd, SHUT_RDWR);
+        client_close(c);
     }
+    c->fd = fd;
+    client_reset_frame(c);
 
-done:
-    free(payload);
     xSemaphoreTake(s_send_lock, portMAX_DELAY);
-    if (s_client == fd) {
-        s_client = -1;
-    }
+    s_client = fd;
     xSemaphoreGive(s_send_lock);
-    close(fd);
-    ESP_LOGI(TAG, "client gone");
+
+    protocol_on_connect();
 }
 
 static void tcp_task(void *arg)
 {
     (void)arg;
+    client_t client = {.fd = -1};
+
     for (;;) {
         int srv = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         if (srv < 0) {
@@ -283,30 +336,60 @@ static void tcp_task(void *arg)
         ESP_LOGI(TAG, "listening on %d", DECK_TCP_PORT);
 
         for (;;) {
-            struct sockaddr_in peer;
-            socklen_t plen = sizeof(peer);
-            int fd = accept(srv, (struct sockaddr *)&peer, &plen);
-            if (fd < 0) {
-                if (errno == EINTR) continue;
+            fd_set rfds;
+            FD_ZERO(&rfds);
+            FD_SET(srv, &rfds);
+            int maxfd = srv;
+            if (client.fd >= 0) {
+                FD_SET(client.fd, &rfds);
+                if (client.fd > maxfd) {
+                    maxfd = client.fd;
+                }
+            }
+
+            struct timeval tv = {.tv_sec = 1, .tv_usec = 0};
+            int r = select(maxfd + 1, &rfds, NULL, NULL, &tv);
+            if (r < 0) {
+                if (errno == EINTR) {
+                    continue;
+                }
+                ESP_LOGW(TAG, "select failed: %d", errno);
                 break;
             }
-            char ip[16];
-            inet_ntoa_r(peer.sin_addr, ip, sizeof(ip));
-            ESP_LOGI(TAG, "client from %s", ip);
-
-            /* Displace any previous client. */
-            xSemaphoreTake(s_send_lock, portMAX_DELAY);
-            int old = s_client;
-            s_client = fd;
-            xSemaphoreGive(s_send_lock);
-            if (old >= 0) {
-                shutdown(old, SHUT_RDWR);
-                close(old);
+            if (r == 0) {
+                continue;   /* idle is normal; the app may sit connected */
             }
 
-            protocol_on_connect();
-            serve_client(fd);
+            /* Accept first, so a reconnecting phone always gets in even when a
+             * stale socket is still attached. */
+            if (FD_ISSET(srv, &rfds)) {
+                struct sockaddr_in peer;
+                socklen_t plen = sizeof(peer);
+                int fd = accept(srv, (struct sockaddr *)&peer, &plen);
+                if (fd >= 0) {
+                    char ip[16];
+                    inet_ntoa_r(peer.sin_addr, ip, sizeof(ip));
+                    ESP_LOGI(TAG, "client from %s", ip);
+                    adopt_client(&client, fd);
+                }
+            }
+
+            if (client.fd >= 0 && FD_ISSET(client.fd, &rfds)) {
+                uint8_t buf[512];
+                int n = recv(client.fd, buf, sizeof(buf), 0);
+                if (n > 0) {
+                    if (!client_feed(&client, buf, (size_t)n)) {
+                        client_close(&client);
+                    }
+                } else if (n == 0) {
+                    client_close(&client);
+                } else if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK) {
+                    ESP_LOGW(TAG, "client read error %d", errno);
+                    client_close(&client);
+                }
+            }
         }
+        client_close(&client);
         close(srv);
     }
 }
