@@ -135,3 +135,20 @@ See `docs/HARDWARE.md` for the wiring and which USB port does what,
 `docs/PROTOCOL.md` for the wire format, `docs/MACROS.md` for the step reference,
 and `docs/BLUETOOTH.md` for pairing. Build instructions for each half live in
 `firmware/README.md` and `android/README.md`.
+
+## License and third-party code
+
+Original code authored for QindaDeck is released under the GNU General Public
+License, version 3 or (at your option) any later version
+(`GPL-3.0-or-later`). See [LICENSE](LICENSE) for the GPL version 3 text.
+Existing third-party licenses and notices remain in force:
+
+- The Gradle wrapper files retain their upstream terms; the
+  [POSIX](android/gradlew) and [Windows](android/gradlew.bat) launcher scripts
+  carry `Apache-2.0` notices.
+- The verbatim Espressif [HID GAP implementation](firmware/main/esp_hid_gap.c)
+  and [header](firmware/main/esp_hid_gap.h) retain `Unlicense OR CC0-1.0`
+  notices and their ESP-IDF v5.5.5 provenance.
+- ESP-IDF, FatFs, TinyUSB, Android/Jetpack, and other external dependencies
+  retain their upstream terms. The original-code grant does not relicense
+  third-party code referenced by the existing sources or patches.
